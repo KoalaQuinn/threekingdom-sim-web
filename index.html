@@ -236,14 +236,51 @@
             0% { opacity: 1; transform: translate(0, 0); }
             100% { opacity: 0; transform: translate(0, -30px); }
         }
+        /* 事件弹窗 */
+        .event-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0, 0.85);
+            z-index: 200;
+        }
+        .event-modal.show {
+            display: block;
+        }
+        .event-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a0a00;
+            border: 2px solid rgba(210, 105, 30, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
+        }
+        .event-option {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .event-option button {
+            text-align: left;
+            white-space: normal;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header-card">
-            <div class="version">v1.0 (2026-03-17 00:36) - 三国模拟器初始版</div>
+            <div class="version">v1.0 (2026-03-17 01:10) - 三国立志传：草莽英雄 MVP</div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>⚔️ 三国模拟器 ⚔️</h1>
+                <h1>⚔️ 三国立志传：草莽英雄 ⚔️</h1>
                 <button id="openSettingsBtn" onclick="game.openSettings()" style="padding: 5px 10px; font-size: 14px;">⚙ 设置</button>
             </div>
         </div>
@@ -255,75 +292,108 @@
         </div>
 
         <div class="tabs">
-            <div class="tab active" onclick="game.switchTab('overview')">总览</div>
-            <div class="tab" onclick="game.switchTab('kingdom')">国情</div>
-            <div class="tab" onclick="game.switchTab('generals')">武将</div>
-            <div class="tab" onclick="game.switchTab('cities')">城池</div>
-            <div class="tab" onclick="game.switchTab('war')">战争</div>
+            <div class="tab active" onclick="game.switchTab('fortress')">我的坞堡</div>
+            <div class="tab" onclick="game.switchTab('market')">州郡街市</div>
+            <div class="tab" onclick="game.switchTab('history')">天下大势</div>
         </div>
 
-        <div id="overview" class="tab-content active">
+        <!-- 我的坞堡 -->
+        <div id="fortress" class="tab-content active">
             <div class="stats-row">
                 <div class="stat-card">
                     <h3>年份</h3>
-                    <p style="font-size: 24px; text-align: center;"><span id="yearText">184</span> 年</p>
+                    <p style="font-size: 20px; text-align: center;"><span id="yearText">184</span> 年</p>
                 </div>
                 <div class="stat-card">
                     <h3>月份</h3>
-                    <p style="font-size: 24px; text-align: center;"><span id="monthText">1</span> 月</p>
+                    <p style="font-size: 20px; text-align: center;"><span id="monthText">1</span> 月</p>
                 </div>
                 <div class="stat-card">
-                    <h3>民心</h3>
-                    <p style="font-size: 24px; text-align: center;"><span id="popularityText">70</span></p>
+                    <h3>行动力</h3>
+                    <p style="font-size: 20px; text-align: center;"><span id="apText">3</span> / 3</p>
                 </div>
             </div>
 
+            <!-- 主角属性 -->
+            <div class="stat-card">
+                <h2>👤 主角属性</h2>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div>武力</div>
+                        <p style="font-size: 20px;"><span id="forceText">40</span> Lv.<span id="forceLevelText">1</span></p>
+                    </div>
+                    <div class="stat-item">
+                        <div>智力</div>
+                        <p style="font-size: 20px;"><span id="intelligenceText">40</span> Lv.<span id="intelligenceLevelText">1</span></p>
+                    </div>
+                    <div class="stat-item">
+                        <div>魅力</div>
+                        <p style="font-size: 20px;"><span id="charismaText">40</span> Lv.<span id="charismaLevelText">1</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心资源 -->
             <div class="stat-card">
                 <h2>💰 资源</h2>
                 <div class="stats-row">
                     <div class="stat-item">
+                        <div>钱币</div>
+                        <p style="font-size: 20px;"><span id="moneyText">100</span></p>
+                    </div>
+                    <div class="stat-item">
                         <div>粮食</div>
-                        <p style="font-size: 20px;"><span id="grainText">10000</span></p>
+                        <p style="font-size: 20px;"><span id="grainText">100</span></p>
                     </div>
                     <div class="stat-item">
-                        <div>金钱</div>
-                        <p style="font-size: 20px;"><span id="moneyText">5000</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>木材</div>
-                        <p style="font-size: 20px;"><span id="woodText">2000</span></p>
+                        <div>私兵</div>
+                        <p style="font-size: 20px;"><span id="soldierText">0</span></p>
                     </div>
                 </div>
+            </div>
+
+            <!-- 坞堡信息 -->
+            <div class="stat-card">
+                <h2>🏰 坞堡</h2>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <div>铁矿</div>
-                        <p style="font-size: 20px;"><span id="ironText">1000</span></p>
+                        <div>等级</div>
+                        <p style="font-size: 20px;">Lv.<span id="fortressLevelText">1</span> - <span id="fortressNameText">破败草庐</span></p>
                     </div>
-                    <div class="stat-item">
-                        <div>人口</div>
-                        <p style="font-size: 20px;"><span id="populationText">100000</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>兵力</div>
-                        <p style="font-size: 20px;"><span id="soldierText">10000</span></p>
+                </div>
+                <p>每月消耗：<span id="fortressUpkeepText">10</span> 粮食</p>
+                <p>每月产出：<span id="fortressYieldText">15 粮食, 0 钱币</span></p>
+                <button id="upgradeFortressBtn" onclick="game.upgradeFortress()" style="width: 100%; margin-top: 10px; font-size: 18px; padding: 15px;" disabled>升级坞堡</button>
+            </div>
+
+            <!-- 坞堡行动 -->
+            <div class="stat-card">
+                <h2>🏃 本月行动</h2>
+                <p>每个行动消耗 1 点行动力</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                    <button onclick="game.actionClearLand()" id="actionClearLand" style="padding: 15px; font-size: 16px;">亲自开垦<br><small>(+粮食 - 消耗 1AP)</small></button>
+                    <button onclick="game.actionStudy()" id="actionStudy" style="padding: 15px; font-size: 16px;">挑灯夜读<br><small>(+智力 - 消耗 1AP)</small></button>
+                </div>
+            </div>
+
+            <!-- 下一步 -->
+            <div class="stat-card">
+                <button id="endMonthBtn" onclick="game.endMonth()" style="width: 100%; font-size: 18px; padding: 15px;">结束本月</button>
+                <div class="stats-row">
+                    <div class="progress-bar" style="margin-top: 10px;">
+                        <div id="apBar" class="progress-fill" style="width: 100%;"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="stat-card">
-                <h2>⚔️ 三国局势</h2>
-                <div id="kingdomOverview"></div>
-                <br>
-                <button onclick="game.nextMonth()" style="width: 100%; font-size: 18px; padding: 15px;">下个月</button>
-            </div>
-
+            <!-- 离线积累 -->
             <div class="stat-card">
                 <h2>💎 离线积累</h2>
-                <p>即使关闭网页，每个月依然会正常发展，积累资源，需要手动领取。最多储存 12 个月。</p>
+                <p>即使关闭网页，每个月依然会正常积累，需要手动领取。最多储存 12 个月。</p>
                 
                 <div style="margin-top: 15px; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span>资源积累</span>
+                        <span>月份积累</span>
                         <span><span id="offlineMonthsText">0</span> / 12 个月</span>
                     </div>
                     <div class="progress-bar">
@@ -335,21 +405,43 @@
             </div>
         </div>
 
-        <div id="kingdom" class="tab-content">
-            <div id="kingdomList"></div>
+        <!-- 州郡街市 -->
+        <div id="market" class="tab-content">
+            <div class="stats-card">
+                <h3>📍 地点</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <button onclick="game.governmentMenu()" style="padding: 15px; font-size: 16px;">
+                        <strong>🏛️ 官署</strong><br>
+                        <small>接取政务</small>
+                    </button>
+                    <button onclick="game.tavernMenu()" style="padding: 15px; font-size: 16px;">
+                        <strong>🍶 酒馆</strong><br>
+                        <small>打听情报</small>
+                    </button>
+                    <button onclick="game.marketMenu()" style="padding: 15px; font-size: 16px;">
+                        <strong>🏪 市集</strong><br>
+                        <small>买卖物资</small>
+                    </button>
+                </div>
+            </div>
+
+            <div id="locationContent" class="stat-card">
+                <p>请点击上方选择一个地点...</p>
+            </div>
         </div>
 
-        <div id="generals" class="tab-content">
-            <div id="generalList"></div>
-        </div>
-
-        <div id="cities" class="tab-content">
-            <div id="cityList"></div>
-        </div>
-
-        <div id="war" class="tab-content">
-            <h2>⚔️  ongoing战争</h2>
-            <div id="warList"></div>
+        <!-- 天下大势 -->
+        <div id="history" class="tab-content">
+            <div class="stat-card">
+                <h2>📜 天下大势</h2>
+                <div id="historyLog" style="max-height: 400px; overflow-y: auto; padding: 10px; background: rgba(0, 0, 0, 0, 0.2); border-radius: 6px;">
+                    <p>184年 1月：黄巾起义爆发，天下大乱，你流落乡野...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <h2>👥 NPC 羁绊</h2>
+                <div id="npcList"></div>
+            </div>
         </div>
     </div>
 
