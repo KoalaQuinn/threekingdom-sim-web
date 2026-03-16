@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三国模拟器 - 三分归一</title>
+    <title>三国立志传：草莽英雄</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='50%25' font-size='80' text-anchor='middle' dy='.3em'%3E⚔️%3C/text%3E%3C/svg%3E"></link>
     <style>
         * {
@@ -19,13 +19,13 @@
             padding: 10px;
         }
         .container {
-            max-width: 900px;
+            max-width: 500px;
             margin: 0 auto;
         }
         .header-card {
             background: rgba(60, 30, 15, 0.8);
             border-radius: 10px;
-            padding: 15px;
+            padding: 10px;
             margin-bottom: 10px;
             border: 1px solid rgba(210, 105, 30, 0.4);
             box-shadow: 0 0 20px rgba(210, 105, 30, 0.15);
@@ -38,10 +38,11 @@
         }
         h1 {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             color: #ffdead;
             text-shadow: 0 0 10px rgba(210, 105, 30, 0.5);
         }
+        /* 底部三个Tab */
         .tabs {
             display: flex;
             background: rgba(60, 30, 15, 0.8);
@@ -53,9 +54,10 @@
         .tab {
             flex: 1;
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 14px;
         }
         .tab.active {
             background: rgba(210, 105, 30, 0.5);
@@ -66,7 +68,7 @@
             background: rgba(60, 30, 15, 0.8);
             border-radius: 10px;
             padding: 15px;
-            min-height: 500px;
+            min-height: 60vh;
             border: 1px solid rgba(210, 105, 30, 0.4);
             box-shadow: 0 0 20px rgba(210, 105, 30, 0.1);
         }
@@ -77,7 +79,7 @@
             background: linear-gradient(135deg, #cd853f 0%, #daa520 100%);
             color: #1a0a00;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
@@ -85,7 +87,7 @@
             transition: all 0.2s;
             box-shadow: 0 0 10px rgba(210, 105, 30, 0.3);
         }
-        button:hover {
+        button:hover:not(:disabled) {
             background: linear-gradient(135deg, #daa520 0%, #ffd700 100%);
             box-shadow: 0 0 20px rgba(210, 105, 30, 0.6);
             transform: translateY(-1px);
@@ -101,7 +103,7 @@
             background: rgba(210, 105, 30, 0.2);
             border: 1px solid rgba(210, 105, 30, 0.3);
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px;
             margin-bottom: 10px;
         }
         .stats-row {
@@ -110,10 +112,16 @@
             gap: 8px;
             margin-bottom: 8px;
         }
+        .stats-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
         .stat-item {
             background: rgba(210, 105, 30, 0.2);
             border: 1px solid rgba(210, 105, 30, 0.3);
-            padding: 8px 12px;
+            padding: 8px;
             border-radius: 6px;
         }
         .progress-bar {
@@ -134,66 +142,91 @@
             margin-bottom: 10px;
             color: #ffdead;
             text-shadow: 0 0 8px rgba(210, 105, 30, 0.3);
+            font-size: 20px;
         }
-        .kingdom-card {
-            background: rgba(210, 105, 30, 0.2);
-            border: 1px solid rgba(210, 105, 30, 0.3);
-            border-radius: 8px;
-            padding: 12px;
+        h3 {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        /* 坞堡行动按钮 */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        /* 街市地点按钮 */
+        .location-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
             margin-bottom: 10px;
         }
-        .kingdom-card.wei {
-            border-color: rgba(100, 149, 237, 0.5);
-            background: rgba(100, 149, 237, 0.15);
-        }
-        .kingdom-card.shu {
-            border-color: rgba(60, 179, 113, 0.5);
-            background: rgba(60, 179, 113, 0.15);
-        }
-        .kingdom-card.wu {
-            border-color: rgba(220, 20, 60, 0.5);
-            background: rgba(220, 20, 60, 0.15);
-        }
-        .progress-bar.wei .progress-fill {
-            background: linear-gradient(90deg, #6495ed, #87cefa);
-        }
-        .progress-bar.shu .progress-fill {
-            background: linear-gradient(90deg, #3cb371, #90ee90);
-        }
-        .progress-bar.wu .progress-fill {
-            background: linear-gradient(90deg, #dc143c, #ff6347);
-        }
-        .general-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            background: rgba(210, 105, 30, 0.2);
-            border: 1px solid rgba(210, 105, 30, 0.3);
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-        .city-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            background: rgba(210, 105, 30, 0.2);
-            border: 1px solid rgba(210, 105, 30, 0.3);
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-        .offline-reward {
-            background: rgba(210, 105, 30, 0.4);
-            border: 1px solid rgba(210, 105, 30, 0.6);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+        /* 事件弹窗 */
+        .event-modal {
             display: none;
-            box-shadow: 0 0 20px rgba(210, 105, 30, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0, 0.85);
+            z-index: 200;
         }
-        .offline-reward.show {
+        .event-modal.show {
             display: block;
+        }
+        .event-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a0a00;
+            border: 2px solid rgba(210, 105, 30, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
+        }
+        .event-text {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .event-option {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .event-option button {
+            text-align: left;
+            white-space: pre-wrap;
+            padding: 10px;
+        }
+        /* 天下大势日志 */
+        .history-log {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+        .history-log p {
+            margin-bottom: 5px;
+            border-bottom: 1px dotted rgba(210, 105, 30, 0.3);
+            padding-bottom: 3px;
+        }
+        /* NPC 羁绊 */
+        .npc-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(210, 105, 30, 0.2);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 6px;
+            margin-bottom: 8px;
         }
         /* 设置弹窗 */
         .settings-modal {
@@ -222,78 +255,35 @@
             max-width: 400px;
             box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
         }
-        /* 伤害飘字 */
-        .damage-text {
-            position: absolute;
-            color: #ff4444;
-            font-weight: bold;
-            font-size: 18px;
-            pointer-events: none;
-            animation: damageFloat 1s ease-out forwards;
-            z-index: 10;
-        }
-        @keyframes damageFloat {
-            0% { opacity: 1; transform: translate(0, 0); }
-            100% { opacity: 0; transform: translate(0, -30px); }
-        }
-        /* 事件弹窗 */
-        .event-modal {
-            display: none;
+        /* 浮动通知 */
+        .notice {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0, 0.85);
-            z-index: 200;
-        }
-        .event-modal.show {
-            display: block;
-        }
-        .event-content {
-            position: absolute;
-            top: 50%;
+            top: 20%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #1a0a00;
-            border: 2px solid rgba(210, 105, 30, 0.6);
-            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffdead;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
             border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
-        }
-        .event-option {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .event-option button {
-            text-align: left;
-            white-space: normal;
+            z-index: 50;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header-card">
-            <div class="version">v1.0 (2026-03-17 01:10) - 三国立志传：草莽英雄 MVP</div>
+            <div class="version">v1.0 (2026-03-17 01:20) - 三国立志传：草莽英雄</div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>⚔️ 三国立志传：草莽英雄 ⚔️</h1>
+                <h1>⚔️ 草莽英雄 ⚔️</h1>
                 <button id="openSettingsBtn" onclick="game.openSettings()" style="padding: 5px 10px; font-size: 14px;">⚙ 设置</button>
             </div>
         </div>
 
-        <div id="offlineReward" class="offline-reward">
-            <h2>🎁 离线收获</h2>
-            <div id="offlineRewardText"></div>
-            <button onclick="game.claimOfflineReward()" style="margin-top: 10px;">领取</button>
-        </div>
-
         <div class="tabs">
             <div class="tab active" onclick="game.switchTab('fortress')">我的坞堡</div>
-            <div class="tab" onclick="game.switchTab('market')">州郡街市</div>
+            <div class="tab" onclick="game.switchTab('city')">州郡街市</div>
             <div class="tab" onclick="game.switchTab('history')">天下大势</div>
         </div>
 
@@ -320,15 +310,15 @@
                 <div class="stats-row">
                     <div class="stat-item">
                         <div>武力</div>
-                        <p style="font-size: 20px;"><span id="forceText">40</span> Lv.<span id="forceLevelText">1</span></p>
+                        <p style="font-size: 18px;"><span id="forceVal">40</span> Lv.<span id="forceLv">1</span></p>
                     </div>
                     <div class="stat-item">
                         <div>智力</div>
-                        <p style="font-size: 20px;"><span id="intelligenceText">40</span> Lv.<span id="intelligenceLevelText">1</span></p>
+                        <p style="font-size: 18px;"><span id="intVal">40</span> Lv.<span id="intLv">1</span></p>
                     </div>
                     <div class="stat-item">
                         <div>魅力</div>
-                        <p style="font-size: 20px;"><span id="charismaText">40</span> Lv.<span id="charismaLevelText">1</span></p>
+                        <p style="font-size: 18px;"><span id="chaVal">40</span> Lv.<span id="chaLv">1</span></p>
                     </div>
                 </div>
             </div>
@@ -336,18 +326,20 @@
             <!-- 核心资源 -->
             <div class="stat-card">
                 <h2>💰 资源</h2>
-                <div class="stats-row">
+                <div class="stats-row-2">
                     <div class="stat-item">
                         <div>钱币</div>
-                        <p style="font-size: 20px;"><span id="moneyText">100</span></p>
+                        <p style="font-size: 18px;"><span id="moneyText">100</span></p>
                     </div>
                     <div class="stat-item">
                         <div>粮食</div>
-                        <p style="font-size: 20px;"><span id="grainText">100</span></p>
+                        <p style="font-size: 18px;"><span id="grainText">100</span></p>
                     </div>
+                </div>
+                <div class="stats-row-2">
                     <div class="stat-item">
                         <div>私兵</div>
-                        <p style="font-size: 20px;"><span id="soldierText">0</span></p>
+                        <p style="font-size: 18px;"><span id="soldierText">0</span></p>
                     </div>
                 </div>
             </div>
@@ -355,76 +347,57 @@
             <!-- 坞堡信息 -->
             <div class="stat-card">
                 <h2>🏰 坞堡</h2>
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <div>等级</div>
-                        <p style="font-size: 20px;">Lv.<span id="fortressLevelText">1</span> - <span id="fortressNameText">破败草庐</span></p>
-                    </div>
-                </div>
-                <p>每月消耗：<span id="fortressUpkeepText">10</span> 粮食</p>
-                <p>每月产出：<span id="fortressYieldText">15 粮食, 0 钱币</span></p>
-                <button id="upgradeFortressBtn" onclick="game.upgradeFortress()" style="width: 100%; margin-top: 10px; font-size: 18px; padding: 15px;" disabled>升级坞堡</button>
+                <p>等级：Lv<span id="fortressLv">1</span> - <span id="fortressName">破败草庐</span></p>
+                <p>每月消耗：<span id="fortressUpkeep">10</span> 粮食</p>
+                <p>每月产出：<span id="fortressYield">15 粮食, 0 钱币</span></p>
+                <button id="btnUpgradeFortress" onclick="game.upgradeFortress()" style="width: 100%; margin-top: 10px;" disabled>升级坞堡</button>
             </div>
 
-            <!-- 坞堡行动 -->
+            <!-- 本月行动 -->
             <div class="stat-card">
-                <h2>🏃 本月行动</h2>
+                <h2>🚶 本月行动</h2>
                 <p>每个行动消耗 1 点行动力</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                    <button onclick="game.actionClearLand()" id="actionClearLand" style="padding: 15px; font-size: 16px;">亲自开垦<br><small>(+粮食 - 消耗 1AP)</small></button>
-                    <button onclick="game.actionStudy()" id="actionStudy" style="padding: 15px; font-size: 16px;">挑灯夜读<br><small>(+智力 - 消耗 1AP)</small></button>
+                <div class="action-buttons">
+                    <button onclick="game.actionClearLand()" id="btnActionClear">亲自开垦<br><small>(+粮食 - 1AP)</small></button>
+                    <button onclick="game.actionStudy()" id="btnActionStudy">挑灯夜读<br><small>(+智力经验 - 1AP)</small></button>
+                </div>
+                <div class="progress-bar" style="margin-top: 10px;">
+                    <div id="apBar" class="progress-fill" style="width: 100%;"></div>
                 </div>
             </div>
 
-            <!-- 下一步 -->
+            <!-- 结束本月 -->
             <div class="stat-card">
-                <button id="endMonthBtn" onclick="game.endMonth()" style="width: 100%; font-size: 18px; padding: 15px;">结束本月</button>
-                <div class="stats-row">
-                    <div class="progress-bar" style="margin-top: 10px;">
-                        <div id="apBar" class="progress-fill" style="width: 100%;"></div>
-                    </div>
-                </div>
+                <button id="btnEndMonth" onclick="game.endMonth()" style="width: 100%; font-size: 18px; padding: 15px;">结束本月</button>
             </div>
 
             <!-- 离线积累 -->
             <div class="stat-card">
                 <h2>💎 离线积累</h2>
-                <p>即使关闭网页，每个月依然会正常积累，需要手动领取。最多储存 12 个月。</p>
-                
-                <div style="margin-top: 15px; margin-bottom: 15px;">
+                <p>关闭网页后，每月自动积累，最多存 12 个月，手动领取。</p>
+                <div style="margin-top: 10px; margin-bottom: 10px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span>月份积累</span>
-                        <span><span id="offlineMonthsText">0</span> / 12 个月</span>
+                        <span>积累月份</span>
+                        <span><span id="offlineMonth">0</span> / 12</span>
                     </div>
                     <div class="progress-bar">
-                        <div id="offlineMonthsBar" class="progress-fill" style="width: 0%"></div>
+                        <div id="offlineBar" class="progress-fill" style="width: 0%;"></div>
                     </div>
                 </div>
-
-                <button id="claimOfflineResourcesBtn" onclick="game.claimOfflineResources()" disabled style="width: 100%; font-size: 18px; padding: 15px;">领取积累资源</button>
+                <button id="btnClaimOffline" onclick="game.claimOffline()" disabled style="width: 100%;">领取积累资源</button>
             </div>
         </div>
 
         <!-- 州郡街市 -->
-        <div id="market" class="tab-content">
-            <div class="stats-card">
-                <h3>📍 地点</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                    <button onclick="game.governmentMenu()" style="padding: 15px; font-size: 16px;">
-                        <strong>🏛️ 官署</strong><br>
-                        <small>接取政务</small>
-                    </button>
-                    <button onclick="game.tavernMenu()" style="padding: 15px; font-size: 16px;">
-                        <strong>🍶 酒馆</strong><br>
-                        <small>打听情报</small>
-                    </button>
-                    <button onclick="game.marketMenu()" style="padding: 15px; font-size: 16px;">
-                        <strong>🏪 市集</strong><br>
-                        <small>买卖物资</small>
-                    </button>
+        <div id="city" class="tab-content">
+            <div class="stat-card">
+                <h3>📍 选择地点</h3>
+                <div class="location-buttons">
+                    <button onclick="game.showGov()">🏛️ 官署<br><small>接取政务</small></button>
+                    <button onclick="game.showTavern()">🍶 酒馆<br><small>打听情报</small></button>
+                    <button onclick="game.showMarket()">🏪 市集<br><small>买卖物资</small></button>
                 </div>
             </div>
-
             <div id="locationContent" class="stat-card">
                 <p>请点击上方选择一个地点...</p>
             </div>
@@ -433,12 +406,12 @@
         <!-- 天下大势 -->
         <div id="history" class="tab-content">
             <div class="stat-card">
-                <h2>📜 天下大势</h2>
-                <div id="historyLog" style="max-height: 400px; overflow-y: auto; padding: 10px; background: rgba(0, 0, 0, 0, 0.2); border-radius: 6px;">
+                <h2>📜 经历日志</h2>
+                <div id="historyLog" class="history-log">
                     <p>184年 1月：黄巾起义爆发，天下大乱，你流落乡野...</p>
                 </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="margin-top: 10px;">
                 <h2>👥 NPC 羁绊</h2>
                 <div id="npcList"></div>
             </div>
@@ -447,13 +420,11 @@
 
     <script src="game.js"></script>
     <script>
-        // 初始化游戏
         window.addEventListener('load', function() {
             game.init();
-            game.startLoop();
         });
     </script>
-    
+
     <!-- 设置弹窗 -->
     <div id="settingsModal" class="settings-modal" onclick="if (event.target == this) game.closeSettings();">
         <div class="settings-content">

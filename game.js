@@ -1,431 +1,470 @@
-// 三国立志传：草莽英雄 - 纯JavaScript网页版
-// 黄巾起义 184年1月 → 诸侯讨董 190年12月 = 84回合
+// 三国立志传：草莽英雄 - Pure JavaScript
+// 黄巾起义 184年1月 → 诸侯讨董 190年12月 = 84回合 MVP
+// Player: 流落乡野平民，目标活下去
 
 const game = {
-    // 游戏日期
+    // 日期
     date: {
         year: 184,
         month: 1,
     },
-    // 玩家主角属性
+
+    // 玩家三属性
     player: {
-        force: {value: 40, level: 1, exp: 0}, // 武力
-        intelligence: {value: 40, level: 1, exp: 0}, // 智力
-        charisma: {value: 40, level: 1, exp: 0}, // 魅力
+        force:    {val: 40, lv: 1, exp: 0},  // 武力 → 战斗/开垦
+        intel:   {val: 40, lv: 1, exp: 0},  // 智力 → 政务/事件
+        charisma:{val: 40, lv: 1, exp: 0},  // 魅力 → 招募/对话
     },
+
     // 核心资源
-    resources: {
-        money: 100,    // 钱币
-        grain: 100,     // 粮食
-        soldier: 0,     // 私兵
+    res: {
+        money:  100,  // 钱币
+        grain:  100,  // 粮食 → 每月消耗，负了饿死
+        soldier: 0,    // 私兵 → 战斗，吃粮食
     },
+
     // 坞堡等级定义
-    fortressLevels: [
+    fortDef: [
         {
-            level: 1,
+            lv: 1,
             name: "破败草庐",
             costMoney: 0,
             costGrain: 0,
-            upkeepGrain: 10,
-            yieldGrain: 15,
+            upkeep: 10,   // 每月粮食消耗
+            yieldGrain: 15, // 每月产出
             yieldMoney: 0,
-            unlock: null
+            unlock: null,
         },
         {
-            level: 2,
+            lv: 2,
             name: "乡间篱落",
             costMoney: 500,
             costGrain: 500,
-            upkeepGrain: 30,
+            upkeep: 30,
             yieldGrain: 60,
             yieldMoney: 10,
-            unlock: "recruit" // 解锁招募私兵
+            unlock: "recruit", // 解锁募兵
         },
         {
-            level: 3,
+            lv: 3,
             name: "坚固坞堡",
             costMoney: 2000,
             costGrain: 3000,
-            upkeepGrain: 100,
+            upkeep: 100,
             yieldGrain: 200,
             yieldMoney: 50,
-            unlock: "defenseBonus" // 贼寇防御+20
+            unlock: "defense", // 贼寇防御+20
         },
         {
-            level: 4,
+            lv: 4,
             name: "乱世壁垒",
             costMoney: 5000,
             costGrain: 8000,
-            upkeepGrain: 300,
+            upkeep: 300,
             yieldGrain: 500,
             yieldMoney: 200,
-            unlock: "refuge" // 随机流民
-        }
+            unlock: "refuge", // 随机流民投奔
+        },
     ],
-    fortressLevel: 1, // 当前坞堡等级
+    fortLv: 1, // 当前等级
 
     // 行动力
-    actionPoints: 3,
-    maxActionPoints: 3,
+    ap: 3,
+    apMax: 3,
 
-    // NPC 羁绊
+    // MVP 三个 NPC
     npcs: {
-        liuBei: {name: "刘备", affinity: 0, unlocked: false},
+        liuBei:   {name: "刘备", affinity: 0, unlocked: false},
         zhangFei: {name: "张飞", affinity: 0, unlocked: false},
-        huaTuo: {name: "华佗", affinity: 0, unlocked: false},
+        huaTuo:   {name: "华佗", affinity: 0, unlocked: false},
     },
 
-    // 天下大势日志
-    historyLog: ["184年 1月：黄巾起义爆发，天下大乱，你流落乡野..."],
+    // 历史日志
+    log: ["184年 1月：黄巾起义爆发，天下大乱，你流落乡野..."],
 
     // 离线积累
-    offlineAccumulation: {
-        accumulatedMonths: 0,
-        maxAccumulateMonths: 12,
+    offline: {
+        months: 0,
+        maxMonths: 12,
         lastUpdate: Date.now(),
     },
 
-    lastSaveTime: Date.now(),
-
-    // 坞堡等级信息
-    get currentFortress() {
-        return this.fortressLevels[this.fortressLevel - 1];
+    // === getters ===
+    get currentFort() {
+        return this.fortDef[this.fortLv - 1];
     },
 
-    // ========== 初始化 ==========
+    // === 初始化 ===
     init: function() {
-        this.resetAllData();
         this.load();
-        this.initDefaultData();
-        this.calculateOfflineReward();
         this.renderAll();
     },
 
-    resetAllData: function() {
-        this.date = {year: 184, month: 1};
-        this.player = {
-            force: {value: 40, level: 1, exp: 0},
-            intelligence: {value: 40, level: 1, exp: 0},
-            charisma: {value: 40, level: 1, exp: 0},
-        };
-        this.resources = {money: 100, grain: 100, soldier: 0};
-        this.fortressLevel = 1;
-        this.actionPoints = this.maxActionPoints;
-        this.npcs = {
-            liuBei: {name: "刘备", affinity: 0, unlocked: false},
-            zhangFei: {name: "张飞", affinity: 0, unlocked: false},
-            huaTuo: {name: "华佗", affinity: 0, unlocked: false},
-        };
-        this.historyLog = ["184年 1月：黄巾起义爆发，天下大乱，你流落乡野..."];
-        this.offlineAccumulation = {
-            accumulatedMonths: 0,
-            maxAccumulateMonths: 12,
-            lastUpdate: Date.now(),
-        };
-        this.lastSaveTime = Date.now();
+    reset: function() {
+        if (!confirm("确定重置游戏？所有进度会丢失。")) return;
+        localStorage.removeItem("threekingdom-caocao");
+        location.reload();
     },
 
-    initDefaultData: function() {
-        // 默认初始化完成
-    },
-
-    // ========== 存档加载 ==========
+    // === 存档 ===
     save: function() {
-        localStorage.setItem('threekingdom-caocao', JSON.stringify({
+        localStorage.setItem("threekingdom-caocao", JSON.stringify({
             date: this.date,
             player: this.player,
-            resources: this.resources,
-            fortressLevel: this.fortressLevel,
-            actionPoints: this.actionPoints,
+            res: this.res,
+            fortLv: this.fortLv,
+            ap: this.ap,
             npcs: this.npcs,
-            historyLog: this.historyLog,
-            offlineAccumulation: this.offlineAccumulation,
-            lastSaveTime: this.lastSaveTime,
+            log: this.log,
+            offline: this.offline,
         }));
     },
 
     load: function() {
-        const saved = localStorage.getItem('threekingdom-caocao');
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.assign(this, data);
-        }
+        const save = localStorage.getItem("threekingdom-caocao");
+        if (save) Object.assign(this, JSON.parse(save));
     },
 
-    // ========== 离线计算 ==========
-    calculateOfflineReward: function() {
+    // === 离线 ===
+    calcOffline: function() {
         const now = Date.now();
-        const elapsedMs = now - this.offlineAccumulation.lastUpdate;
-        const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
-        const elapsedMonths = Math.floor(elapsedDays / 30);
-        if (elapsedMonths <= 0) return;
-
-        const addMonths = Math.min(elapsedMonths, this.offlineAccumulation.maxAccumulateMonths - this.offlineAccumulation.accumulatedMonths);
-        this.offlineAccumulation.accumulatedMonths += addMonths;
-        this.renderFortress();
-        this.renderOverview();
+        const days = (now - this.offline.lastUpdate) / (1000 * 60 * 60 * 24);
+        let months = Math.floor(days / 30);
+        months = Math.min(months, this.offline.maxMonths - this.offline.months);
+        if (months <= 0) return;
+        this.offline.months += months;
+        this.render();
     },
 
-    // 领取离线积累
-    claimOfflineResources: function() {
-        if (this.offlineAccumulation.accumulatedMonths <= 0) return;
-
-        const f = this.currentFortress;
-        const months = this.offlineAccumulation.accumulatedMonths;
-        this.resources.grain += f.yieldGrain * months;
-        this.resources.money += f.yieldMoney * months;
-
-        // 清空积累
-        this.offlineAccumulation.accumulatedMonths = 0;
-        this.offlineAccumulation.lastUpdate = Date.now();
+    claimOffline: function() {
+        if (this.offline.months <= 0) return;
+        const f = this.currentFort;
+        for (let i = 0; i < this.offline.months; i++) {
+            this.res.grain += f.yieldGrain;
+            this.res.money += f.yieldMoney;
+        }
+        this.offline.months = 0;
+        this.offline.lastUpdate = Date.now();
         this.save();
-        this.renderAll();
-        this.showNotice("领取了 " + months + " 个月的产出！");
+        this.render();
+        this.notice(`领取了 ${this.offline.months} 个月产出！`);
     },
 
-    // ========== 行动力和行动 ==========
-    spendAP: function() {
-        if (this.actionPoints <= 0) {
-            this.showNotice("行动力已经用完了，请结束本月！");
+    // === 行动力 ===
+    useAP: function() {
+        if (this.ap <= 0) {
+            this.notice("行动力用完了，请结束本月！");
             return false;
         }
-        this.actionPoints--;
-        this.renderAP();
+        this.ap--;
+        this.render();
         this.save();
         return true;
     },
 
-    // 行动：亲自开垦
+    // === 属性升级 ===
+    checkAttrUpgrade: function(attr) {
+        const needExp = this.player[attr].lv * 10;
+        if (this.player[attr].exp >= needExp) {
+            this.player[attr].exp -= needExp;
+            this.player[attr].lv++;
+            this.player[attr].val += 5;
+            const name = attr === 'force' ? '武力' : attr === 'intel' ? '智力' : '魅力';
+            this.notice(`${name} 升级！Lv.${this.player[attr].lv}`);
+        }
+    },
+
+    // === 行动 ===
+    // 1. 亲自开垦
     actionClearLand: function() {
-        if (!this.spendAP()) return;
-        // 开垦获得粮食，受武力加成
-        const baseGain = 10;
-        const gain = Math.floor(baseGain * (1 + this.player.force.value / 100));
-        this.resources.grain += gain;
-        this.addHistory(`你亲自开垦荒地，获得 ${gain} 粮食`);
-        this.renderAll();
+        if (!this.useAP()) return;
+        const base = 10;
+        const gain = Math.floor(base * (1 + this.player.force.val / 100));
+        this.res.grain += gain;
+        this.addLog(`你亲自开垦荒地，获得 ${gain} 粮食`);
+        this.render();
     },
 
-    // 行动：挑灯夜读
+    // 2. 挑灯夜读
     actionStudy: function() {
-        if (!this.spendAP()) return;
-        // 增加智力经验
-        this.player.intelligence.exp += 10;
-        // 检查升级
-        this.checkLevelUp('intelligence');
-        this.addHistory(`你挑灯夜读，智力经验 +10`);
-        this.renderAll();
+        if (!this.useAP()) return;
+        this.player.intel.exp += 10;
+        this.checkAttrUpgrade('intel');
+        this.addLog(`你挑灯夜读，智力经验 +10`);
+        this.render();
     },
 
-    // 检查属性升级
-    checkLevelUp: function(attr) {
-        const expNeeded = this.player[attr].level * 10;
-        if (this.player[attr].exp >= expNeeded) {
-            this.player[attr].exp -= expNeeded;
-            this.player[attr].level++;
-            this.player[attr].value += 5;
-            this.showNotice(`${attr === 'force' ? '武力' : attr === 'intelligence' ? '智力' : '魅力'} 升级！Lv.${this.player[attr].level}`);
-        }
-    },
-
-    // ========== 坞堡 ==========
+    // === 坞堡升级 ===
     upgradeFortress: function() {
-        if (this.fortressLevel >= this.fortressLevels.length) {
-            this.showNotice("坞堡已经满级了！");
+        if (this.fortLv >= this.fortDef.length) {
+            this.notice("坞堡已满级！");
             return;
         }
-        const nextLevel = this.fortressLevel + 1;
-        const nextDef = this.fortressLevels[nextLevel - 1];
-        if (this.resources.money < nextDef.costMoney || this.resources.grain < nextDef.costGrain) {
-            this.showNotice("资源不足，无法升级！");
+        const next = this.fortLv + 1;
+        const def = this.fortDef[next - 1];
+        if (this.res.money < def.costMoney || this.res.grain < def.costGrain) {
+            this.notice("资源不足，无法升级！");
             return;
         }
-        // 扣资源升级
-        this.resources.money -= nextDef.costMoney;
-        this.resources.grain -= nextDef.costGrain;
-        this.fortressLevel = nextLevel;
-        this.addHistory(`坞堡升级为 ${nextDef.name}`);
+        this.res.money -= def.costMoney;
+        this.res.grain -= def.costGrain;
+        this.fortLv = next;
+        this.addLog(`坞堡升级 → ${def.name}`);
         this.save();
-        this.renderAll();
-        this.showNotice(`坞堡升级成功！${nextDef.name}`);
+        this.render();
+        this.notice(`坞堡升级成功！${def.name}`);
     },
 
-    // ========== 街市地点 ==========
-    governmentMenu: function() {
-        if (!this.spendAP()) return;
+    // === 街市 ===
+    // 官署
+    showGov: function() {
+        if (!this.useAP()) return;
         const html = `
-            <h3>🏛️ 官署</h3>
-            <p>郡府招收徭役，完成任务可以获得俸禄。</p>
-            <button onclick="game.doGovernmentTask()" style="width: 100%; margin-top: 10px;">接取徭役任务（消耗 1AP 已消耗）</button>
+            <h3>🏛️ 郡府徭役</h3>
+            <p>郡守招收徭役，完成干活获得俸禄，需要智力检定。</p>
+            <div class="event-option">
+                <button onclick="game.doGovTask()">接受徭役（智力检定 > 50）</button>
+            </div>
         `;
         document.getElementById('locationContent').innerHTML = html;
     },
 
-    doGovernmentTask: function() {
-        // 智力检定
-        const success = this.checkRoll(this.player.intelligence.value, 50);
-        let money = 0;
+    doGovTask: function() {
+        const success = this.roll(this.player.intel.val, 50);
         if (success) {
-            money = 50 + Math.floor(this.player.intelligence.value);
-            this.resources.money += money;
-            this.player.intelligence.exp += 5;
-            this.checkLevelUp('intelligence');
-            this.addHistory(`完成徭役任务，获得 ${money} 钱币`);
-            this.renderAll();
-            this.closeEventModal();
+            const money = 50 + Math.floor(this.player.intel.val);
+            this.res.money += money;
+            this.player.intel.exp += 5;
+            this.checkAttrUpgrade('intel');
+            this.addLog(`完成徭役，获得 ${money} 钱币`);
+            this.closeEvent();
+            this.render();
         } else {
-            money = 20;
-            this.resources.money += money;
-            this.addHistory(`徭役任务完成不佳，获得 ${money} 钱币`);
-            this.renderAll();
-            this.closeEventModal();
+            const money = 20;
+            this.res.money += money;
+            this.addLog(`徭役完成不佳，获得 ${money} 钱币`);
+            this.closeEvent();
+            this.render();
         }
     },
 
-    tavernMenu: function() {
-        if (!this.spendAP()) return;
-        // 50%概率刷出NPC
-        const rand = Math.random();
-        if (rand < 0.5) {
-            // 随机一个NPC
-            const npcKeys = Object.keys(this.npcs).filter(k => !this.npcs[k].unlocked);
-            if (npcKeys.length > 0) {
-                const npcKey = npcKeys[Math.floor(Math.random() * npcKeys.length)];
-                const npc = this.npcs[npcKey];
+    // 酒馆
+    showTavern: function() {
+        if (!this.useAP()) return;
+        // 50% 概率刷出 NPC
+        if (Math.random() < 0.5) {
+            // 找未解锁的 NPC
+            const candidates = Object.values(this.npcs).filter(n => !n.unlocked);
+            if (candidates.length > 0) {
+                // 随机一个
+                const npc = candidates[Math.floor(Math.random() * candidates.length)];
                 this.showNpcInvite(npc);
                 return;
             }
         }
-        // 随机事件
-        this.triggerRandomEvent();
+        // 否则随机事件
+        this.triggerRandom();
     },
 
     showNpcInvite: function(npc) {
-        let html = `
+        const html = `
             <h3>🍶 酒馆偶遇</h3>
-            <p>你在酒馆喝酒，遇到了 ${npc.name}，对方也正好一个人喝酒，可以花钱请客刷好感。</p>
+            <p>你在酒馆喝酒，正好碰到 ${npc.name} 一人独坐，可以花钱请客增加好感。</p>
             <div class="event-option">
-                <button onclick="game.inviteNpc('${npc.name}')">请客喝酒（花费 30 钱币，+10 好感）</button>
+                <button onclick="game.inviteNpc('${npc.name}')">请客喝酒 → 花费 30 钱，+10 好感</button>
             </div>
         `;
-        this.openEventModal(html);
+        this.openEvent(html);
     },
 
-    inviteNpc: function(npcName) {
-        if (this.resources.money < 30) {
-            this.showNotice("钱币不够，无法请客");
+    inviteNpc: function(name) {
+        if (this.res.money < 30) {
+            this.notice("钱币不够，无法请客");
             return;
         }
-        this.resources.money -= 30;
-        this.npcs[npcName].affinity += 10;
-        if (this.npcs[npcName].affinity >= 100) {
-            this.npcs[npcName].unlocked = true;
-            this.addHistory(`${npcName} 好感已满，解锁羁绊！`);
-            this.showNotice(`${npcName} 羁绊解锁！`);
+        this.res.money -= 30;
+        // find npc key
+        const key = Object.keys(this.npcs).find(k => this.npcs[k].name === name);
+        this.npcs[key].affinity += 10;
+        if (this.npcs[key].affinity >= 100) {
+            this.npcs[key].unlocked = true;
+            this.addLog(`${name} 好感满了，解锁羁绊！`);
+            this.notice(`${name} 羁绊解锁！`);
         } else {
-            this.addHistory(`请 ${npcName} 喝酒，好感 +10`);
+            this.addLog(`请 ${name} 喝酒，好感 +10`);
         }
-        this.renderAll();
-        this.closeEventModal();
+        this.closeEvent();
+        this.render();
     },
 
-    marketMenu: function() {
-        if (!this.spendAP()) return;
+    // 市集
+    showMarket: function() {
+        if (!this.useAP()) return;
         const html = `
             <h3>🏪 市集</h3>
-            <p>买卖物资</p>
+            <p>买卖粮食</p>
             <div class="event-option">
-                <button onclick="game.buyGrain(100)">买入粮食 100 → 花费 50 钱币</button>
-                <button onclick="game.buyGrain(500)">买入粮食 500 → 花费 225 钱币</button>
-                <button onclick="game.sellGrain(100)">卖出粮食 100 → 得到 40 钱币</button>
-                <button onclick="game.sellGrain(500)">卖出粮食 500 → 得到 200 钱币</button>
+                <button onclick="game.buyGrain(100)">买入 100 粮食 → 花费 50 钱</button>
+                <button onclick="game.buyGrain(500)">买入 500 粮食 → 花费 250 钱</button>
+                <button onclick="game.sellGrain(100)">卖出 100 粮食 → 得到 40 钱</button>
+                <button onclick="game.sellGrain(500)">卖出 500 粮食 → 得到 200 钱</button>
             </div>
         `;
         document.getElementById('locationContent').innerHTML = html;
     },
 
-    buyGrain: function(amount) {
-        const cost = Math.floor(amount * 0.5);
-        if (this.resources.money < cost) {
-            this.showNotice("钱币不够");
+    buyGrain: function(num) {
+        const cost = Math.floor(num * 0.5);
+        if (this.res.money < cost) {
+            this.notice("钱币不够");
             return;
         }
-        this.resources.money -= cost;
-        this.resources.grain += amount;
-        this.addHistory(`市集买入 ${amount} 粮食`);
-        this.renderAll();
+        this.res.money -= cost;
+        this.res.grain += num;
+        this.addLog(`市集买入 ${num} 粮食`);
+        this.render();
     },
 
-    sellGrain: function(amount) {
-        if (this.resources.grain < amount) {
-            this.showNotice("粮食不够");
+    sellGrain: function(num) {
+        const gain = Math.floor(num * 0.4);
+        if (this.res.grain < num) {
+            this.notice("粮食不够");
             return;
         }
-        const gain = Math.floor(amount * 0.4);
-        this.resources.grain -= amount;
-        this.resources.money += gain;
-        this.addHistory(`市集卖出 ${amount} 粮食`);
-        this.renderAll();
+        this.res.grain -= num;
+        this.res.money += gain;
+        this.addLog(`市集卖出 ${num} 粮食`);
+        this.render();
     },
 
-    // ========== 检定 ==========
-    // 隐性骰子 1-100，加上属性大于难度就算成功
-    checkRoll: function(attributeValue, difficulty) {
+    // === 检定 ===
+    roll: function(attrVal, diff) {
         const roll = Math.floor(Math.random() * 100) + 1;
-        return (roll + attributeValue) >= difficulty;
+        return (roll + attrVal) >= diff;
     },
 
-    // ========== 结束月份 ==========
+    // === 结束月份 ===
     endMonth: function() {
-        // 扣除坞堡维护
-        const f = this.currentFortress;
-        const totalUpkeep = f.upkeepGrain + this.resources.soldier;
-        this.resources.grain -= totalUpkeep;
+        // 消耗
+        const f = this.currentFort;
+        const totalUpkeep = f.upkeep + this.res.soldier;
+        this.res.grain -= totalUpkeep;
 
-        // 检查败北：粮食不够饿死
-        if (this.resources.grain < 0) {
+        // 检查失败：饿死 game over
+        if (this.res.grain < 0) {
             this.gameOver();
             return;
         }
 
-        // 坞堡产出
-        this.resources.grain += f.yieldGrain;
-        this.resources.money += f.yieldMoney;
+        // 产出
+        this.res.grain += f.yieldGrain;
+        this.res.money += f.yieldMoney;
 
-        // 推进月份
+        // 前进月份
         this.date.month++;
         if (this.date.month > 12) {
             this.date.month = 1;
             this.date.year++;
         }
 
-        // 检查结局：到 190 年 12 月结束
-        if (this.date.year >= 191 || (this.date.year === 190 && this.date.month > 12)) {
+        // 检查胜利：结束 190年12月
+        if (this.date.year > 190 || (this.date.year === 190 && this.date.month > 12)) {
             this.gameWin();
             return;
         }
 
-        // 添加历史
-        this.addHistory(`${this.date.year}年 ${this.date.month}月：回合结束`);
+        // 记录
+        this.addLog(`${this.date.year}年 ${this.date.month}月：回合结束`);
 
-        // 重置行动力
-        this.actionPoints = this.maxActionPoints;
-        this.offlineAccumulation.lastUpdate = Date.now();
+        // 重置 AP
+        this.ap = this.apMax;
+        this.offline.lastUpdate = Date.now();
 
-        // 这里可以触发随机月度事件
+        // 随机事件 30%
         if (Math.random() < 0.3) {
-            // 30% 概率月度事件
-            // 先空着，以后加
+            this.triggerRandom();
         }
 
         this.save();
-        this.renderAll();
-        this.showNotice("新的一月开始了");
+        this.render();
+        this.notice("新的一月开始");
     },
 
-    // ========== 游戏结束 ==========
+    // === 事件 ===
+    events: [
+        {
+            title: "黄巾残党过境",
+            text: "一伙大约二十人的黄巾残路过你的坞堡，要求你交保护费。",
+            options: [
+                {text: "【武力硬刚】 武力+私兵 > 80", attr: "force", diff: 80, successText: "你击败了黄巾残党，缴获 150 钱", success: {money: 150}, failText: "你击退了黄巾，但被抢走一半粮食", fail: {grain: -Math.floor(game.res.grain / 2)}},
+                {text: "【破财消灾】 交出 100 粮食，安全过关", successText: "黄巾拿了粮食走了，你安全过关", success: {grain: -100}},
+            ]
+        },
+        {
+            title: "流民求收留",
+            text: "一群流民逃到你的坞堡外，请求收留，他们带着一点粮食。",
+            options: [
+                {text: "【收留】 魅力检定 > 50 → 留下粮食", attr: "charisma", diff: 50, successText: "流民感谢你，留下 80 粮食投奔", success: {grain: 80}, failText: "流民内乱抢了粮食跑了，你损失 30 粮食", fail: {grain: -30}},
+                {text: "【赶走】 关门不放走，安全", successText: "你关上寨门，流民离开了", success: {}},
+            ]
+        }
+    ],
+
+    triggerRandom: function() {
+        const ev = this.events[Math.floor(Math.random() * this.events.length)];
+        let html = `<h3>${ev.title}</h3><p class="event-text">${ev.text}</p><div class="event-option">`;
+        ev.options.forEach((opt, i) => {
+            if (opt.attr) {
+                html += `<button onclick="game.chooseEvent(${i})">${opt.text}</button>`;
+            } else {
+                html += `<button onclick="game.chooseEventSimple(${i})">${opt.text}</button>`;
+            }
+        });
+        html += '</div>';
+        // 保存当前事件
+        window.currentEvent = ev;
+        this.openEvent(html);
+    },
+
+    chooseEvent: function(idx) {
+        const ev = window.currentEvent;
+        const opt = ev.options[idx];
+        const attr = this.player[opt.attr === 'force' ? 'force' : opt.attr === 'intel' ? 'intel' : 'charisma'];
+        const success = this.roll(attr.val, opt.diff);
+        if (success) {
+            this.giveReward(opt.success);
+            this.addLog(`[事件] ${ev.title} - ${opt.successText}`);
+            this.notice(opt.successText);
+        } else {
+            this.giveReward(opt.fail);
+            this.addLog(`[事件] ${ev.title} - ${opt.failText}`);
+            this.notice(opt.failText);
+        }
+        this.closeEvent();
+        this.render();
+        delete window.currentEvent;
+    },
+
+    chooseEventSimple: function(idx) {
+        const ev = window.currentEvent;
+        const opt = ev.options[idx];
+        this.giveReward(opt);
+        this.addLog(`[事件] ${ev.title} - ${opt.text}`);
+        this.notice(opt.successText);
+        this.closeEvent();
+        this.render();
+        delete window.currentEvent;
+    },
+
+    giveReward: function(reward) {
+        if (reward.money) this.res.money += reward.money;
+        if (reward.grain) this.res.grain += reward.grain;
+        if (reward.soldier) this.res.soldier += reward.soldier;
+    },
+
+    // === 游戏结束 ===
     gameOver: function() {
-        this.openEventModal(`
+        this.openEvent(`
             <h2>💀 游戏结束</h2>
             <p>你没有粮食，最终饿死在了坞堡...</p>
             <p>终年 ${this.date.year} 年 ${this.date.month} 月</p>
@@ -436,173 +475,93 @@ const game = {
     },
 
     gameWin: function() {
-        // 结算结局
-        let ending = "";
-        if (this.fortressLevel <= 1) ending = "草根流民";
-        else if (this.fortressLevel <= 2) ending = "小有积蓄，一方草莽";
-        else if (this.fortressLevel <= 3) ending = "坞堡豪强，一郡闻名";
-        else ending = "州郡重臣，名留青史";
+        // 结局评价
+        let end = "";
+        if (this.fortLv <= 1) end = "草根流民";
+        else if (this.fortLv <= 2) end = "小有积蓄，一方草莽";
+        else if (this.fortLv <= 3) end = "坞堡豪强，一郡闻名";
+        else end = "州郡重臣，名留青史";
 
-        this.openEventModal(`
-            <h2>🎉 游戏通关</h2>
+        this.openEvent(`
+            <h2>🎉 恭喜通关</h2>
             <p>你成功活到了 190 年 12 月，诸侯讨董即将开始。</p>
-            <p><strong>结局评价：${ending}</strong></p>
-            <p>当前坞堡：${this.currentFortress.name} Lv.${this.fortressLevel}</p>
-            <p>武力：${this.player.force.value} 智力：${this.player.intelligence.value} 魅力：${this.player.charisma.value}</p>
+            <p><strong>结局评价：${end}</strong></p>
+            <p>当前坞堡：${this.currentFort.name} Lv.${this.fortLv}</p>
+            <p>武力：${this.player.force.val} 智力：${this.player.intel.val} 魅力：${this.player.charisma.val}</p>
             <div class="event-option">
                 <button onclick="location.reload()">重新开始</button>
             </div>
         `);
     },
 
-    // ========== 事件弹窗 ==========
-    openEventModal: function(html) {
+    // === UI ===
+    openEvent: function(html) {
         const modal = document.createElement('div');
         modal.id = 'eventModal';
         modal.className = 'event-modal show';
-        modal.innerHTML = `
-            <div class="event-content">
-                ${html}
-            </div>
-        `;
+        modal.innerHTML = `<div class="event-content">${html}</div>`;
         document.body.appendChild(modal);
     },
 
-    closeEventModal: function() {
-        const modal = document.getElementById('eventModal');
-        if (modal) modal.remove();
+    closeEvent: function() {
+        document.getElementById('eventModal')?.remove();
     },
 
-    // ========== 随机事件 ==========
-    randomEvents: [
-        {
-            title: "黄巾残党路过",
-            text: "一伙大约二十人的黄巾残党路过你的坞堡，要求你交纳保护费。",
-            options: [
-                {text: "【武力硬刚】 武力检定 > 60", attr: "force", diff: 60, successText: "你杀出重围，击退黄巾，缴获 150 钱", successReward: {money: 150}, failText: "黄巾抢走一半粮食，你负伤击退他们", failReward: {grain: -Math.floor(game.resources.grain / 2)}},
-                {text: "【破财消灾】 直接交出 100 粮食", successText: "黄巾拿了粮食走了，你安全度过", successReward: {grain: -100}},
-            ]
-        },
-        {
-            title: "流民求收留",
-            text: "一队流民逃到你的坞堡外，请求收留，他们带了一些粮食。你选择：",
-            options: [
-                {text: "【收留】 魅力检定 > 50 → 增加粮食", attr: "charisma", diff: 50, successText: "流民感激你，留下 80 粮食投奔", successReward: {grain: 80}, failText: "流民内部抢了粮食逃跑了，你损失 30 粮食", failReward: {grain: -30}},
-                {text: "【赶走】 关闭大门，不收留", successText: "你保住了粮食，流民离开了", successReward: {}},
-            ]
-        }
-    ],
-
-    triggerRandomEvent: function() {
-        const event = this.randomEvents[Math.floor(Math.random() * this.randomEvents.length)];
-        let html = `<h3>${event.title}</h3><p>${event.text}</p><div class="event-option">`;
-        event.options.forEach((opt, i) => {
-            if (opt.attr) {
-                html += `<button onclick="game.triggerEventOption(${i})">${opt.text}</button>`;
-            } else {
-                html += `<button onclick="game.triggerEventSimple(${i})">${opt.text}</button>`;
-            }
+    addLog: function(text) {
+        this.log.push(`${this.date.year}年 ${this.date.month}月：${text}`);
+        const container = document.getElementById('historyLog');
+        let html = '';
+        // 反转，最新放上面
+        [...this.log].reverse().forEach(line => {
+            html += `<p>${line}</p>`;
         });
-        html += '</div>';
-        this.openEventModal(html);
-        // 保存当前事件到窗口方便选择
-        window.currentEvent = event;
+        container.innerHTML = html;
     },
 
-    triggerEventOption: function(optIndex) {
-        const event = window.currentEvent;
-        const opt = event.options[optIndex];
-        const attr = this.player[opt.attr];
-        const success = this.checkRoll(attr.value, opt.diff);
-        if (success) {
-            this.gainReward(opt.successReward);
-            this.addHistory(`[事件] ${event.title} - ${opt.successText}`);
-            this.showNotice(opt.successText);
-        } else {
-            this.gainReward(opt.failReward);
-            this.addHistory(`[事件] ${event.title} - ${opt.failText}`);
-            this.showNotice(opt.failText);
-        }
-        this.renderAll();
-        this.closeEventModal();
-        delete window.currentEvent;
-    },
-
-    triggerEventSimple: function(optIndex) {
-        const event = window.currentEvent;
-        const opt = event.options[optIndex];
-        this.gainReward(opt);
-        this.addHistory(`[事件] ${event.title} - ${opt.text}`);
-        this.showNotice(opt.successText);
-        this.renderAll();
-        this.closeEventModal();
-        delete window.currentEvent;
-    },
-
-    gainReward: function(reward) {
-        if (reward.money) this.resources.money += reward.money;
-        if (reward.grain) this.resources.grain += reward.grain;
-        if (reward.soldier) this.resources.soldier += reward.soldier;
-    },
-
-    // ========== 渲染 ==========
     renderAll: function() {
-        this.renderOverview();
-        this.renderFortress();
-        this.renderAP();
+        // 日期
+        document.getElementById('yearText').textContent = this.date.year;
+        document.getElementById('monthText').textContent = this.date.month;
+
+        // 属性
+        document.getElementById('forceVal').textContent = this.player.force.val;
+        document.getElementById('forceLv').textContent = this.player.force.lv;
+        document.getElementById('intVal').textContent = this.player.intel.val;
+        document.getElementById('intLv').textContent = this.player.intel.lv;
+        document.getElementById('chaVal').textContent = this.player.charisma.val;
+        document.getElementById('chaLv').textContent = this.player.charisma.lv;
+
+        // 资源
+        document.getElementById('moneyText').textContent = this.res.money;
+        document.getElementById('grainText').textContent = this.res.grain;
+        document.getElementById('soldierText').textContent = this.res.soldier;
+
+        // 坞堡
+        const f = this.currentFort;
+        document.getElementById('fortressLv').textContent = f.lv;
+        document.getElementById('fortressName').textContent = f.name;
+        document.getElementById('fortressUpkeep').textContent = f.upkeep;
+        document.getElementById('fortressYield').textContent = `${f.yieldGrain} 粮食, ${f.yieldMoney} 钱币`;
+
+        // AP
+        document.getElementById('apText').textContent = `${this.ap}/${this.apMax}`;
+        document.getElementById('apBar').style.width = `${(this.ap / this.apMax) * 100}%`;
+
+        // 按钮
+        document.getElementById('btnUpgradeFortress').disabled = this.fortLv >= this.fortDef.length || this.res.money < (this.fortDef[this.fortLv]?.costMoney || 99999) || this.res.grain < (this.fortDef[this.fortLv]?.costGrain || 99999);
+        document.getElementById('btnActionClear').disabled = this.ap <= 0;
+        document.getElementById('btnActionStudy').disabled = this.ap <= 0;
+
+        // 离线
+        document.getElementById('offlineMonth').textContent = this.offline.months;
+        document.getElementById('offlineBar').style.width = `${(this.offline.months / this.offline.maxMonths) * 100}%`;
+        document.getElementById('btnClaimOffline').disabled = this.offline.months <= 0;
+
+        // NPC list
         this.renderNpc();
     },
 
-    renderOverview: function() {
-        document.getElementById('yearText').textContent = this.date.year;
-        document.getElementById('monthText').textContent = this.date.month;
-        document.getElementById('forceText').textContent = this.player.force.value;
-        document.getElementById('forceLevelText').textContent = this.player.force.level;
-        document.getElementById('intelligenceText').textContent = this.player.intelligence.value;
-        document.getElementById('intelligenceLevelText').textContent = this.player.intelligence.level;
-        document.getElementById('charismaText').textContent = this.player.charisma.value;
-        document.getElementById('charismaLevelText').textContent = this.player.charisma.level;
-        document.getElementById('moneyText').textContent = this.resources.money.toLocaleString();
-        document.getElementById('grainText').textContent = this.resources.grain.toLocaleString();
-        document.getElementById('soldierText').textContent = this.resources.soldier.toLocaleString();
-
-        // 离线
-        const maxMonths = this.offlineAccumulation.maxAccumulateMonths;
-        const current = this.offlineAccumulation.accumulatedMonths;
-        const percent = (current / maxMonths) * 100;
-        document.getElementById('offlineMonthsText').textContent = current.toString();
-        document.getElementById('offlineMonthsBar').style.width = percent + '%';
-        document.getElementById('claimOfflineResourcesBtn').disabled = current <= 0;
-
-        // 升级按钮
-        const canUpgrade = this.fortressLevel < this.fortressLevels.length;
-        document.getElementById('upgradeFortressBtn').disabled = !canUpgrade;
-
-        // 行动按钮
-        document.getElementById('actionClearLand').disabled = this.actionPoints <= 0;
-        document.getElementById('actionStudy').disabled = this.actionPoints <= 0;
-    },
-
-    renderFortress: function() {
-        const f = this.currentFortress;
-        document.getElementById('fortressLevelText').textContent = f.level;
-        document.getElementById('fortressNameText').textContent = f.name;
-        document.getElementById('fortressUpkeepText').textContent = f.upkeepGrain;
-        document.getElementById('fortressYieldText').textContent = `${f.yieldGrain} 粮食, ${f.yieldMoney} 钱币`;
-
-        // 检查能不能升级
-        if (this.fortressLevel < this.fortressLevels.length) {
-            const next = this.fortressLevels[this.fortressLevel];
-            const can = this.resources.money >= next.costMoney && this.resources.grain >= next.costGrain;
-            document.getElementById('upgradeFortressBtn').disabled = !can;
-        }
-    },
-
-    renderAP: function() {
-        document.getElementById('apText').textContent = `${this.actionPoints} / ${this.maxActionPoints}`;
-        const percent = (this.actionPoints / this.maxActionPoints) * 100;
-        document.getElementById('apBar').style.width = percent + '%';
-    },
+    render: this.renderAll,
 
     renderNpc: function() {
         const container = document.getElementById('npcList');
@@ -610,7 +569,7 @@ const game = {
         for (let key in this.npcs) {
             const npc = this.npcs[key];
             html += `
-                <div class="general-item kingdom-card ${npc.unlocked ? 'unlocked' : ''}">
+                <div class="npc-item">
                     <div>
                         <strong>${npc.name}</strong>
                         ${npc.unlocked ? `<br><small>羁绊已解锁</small>` : `<br><small>好感：${npc.affinity}/100</small>`}
@@ -621,46 +580,26 @@ const game = {
         container.innerHTML = html;
     },
 
-    // ========== 界面 ==========
-    addHistory: function(text) {
-        this.historyLog.push(text);
-        const container = document.getElementById('historyLog');
-        let html = '';
-        // 反转显示最新在最上面
-        this.historyLog.slice().reverse().forEach(line => {
-            html += `<p>${line}</p>`;
-        });
-        container.innerHTML = html;
-    },
-
-    switchTab: function(tabId) {
+    // 切换 tab
+    switchTab: function(id) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelector(`.tab:nth-child(${this.tabIndex(tabId) + 1})`).classList.add('active');
-        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`.tab:nth-child(${this.tabIndex(id) + 1})`).classList.add('active');
+        document.getElementById(id).classList.add('active');
     },
 
-    tabIndex: function(tabId) {
-        const tabs = ['fortress', 'market', 'history'];
-        return tabs.indexOf(tabId);
+    tabIndex: function(id) {
+        const tabs = ['fortress', 'city', 'history'];
+        return tabs.indexOf(id);
     },
 
-    showNotice: function(text) {
-        const noticeDiv = document.createElement('div');
-        noticeDiv.textContent = text;
-        noticeDiv.style.position = 'absolute';
-        noticeDiv.style.left = '50%';
-        noticeDiv.style.top = '20%';
-        noticeDiv.style.transform = 'translate(-50%, -50%)';
-        noticeDiv.style.fontSize = '20px';
-        noticeDiv.style.fontWeight = 'bold';
-        noticeDiv.style.color = '#ffdead';
-        noticeDiv.style.background = 'rgba(0, 0, 0, 0.8)';
-        noticeDiv.style.padding = '20px 30px';
-        noticeDiv.style.borderRadius = '10px';
-        noticeDiv.style.zIndex = '50';
-        document.querySelector('.header-card').appendChild(noticeDiv);
-        setTimeout(() => noticeDiv.remove(), 3000);
+    // 弹窗
+    notice: function(text) {
+        const n = document.createElement('div');
+        n.className = 'notice';
+        n.textContent = text;
+        document.querySelector('.header-card').appendChild(n);
+        setTimeout(() => n.remove(), 3000);
     },
 
     openSettings: function() {
@@ -670,15 +609,4 @@ const game = {
     closeSettings: function() {
         document.getElementById('settingsModal').classList.remove('show');
     },
-
-    resetGame: function() {
-        if (confirm('确定要重置游戏吗？所有进度会丢失。')) {
-            localStorage.removeItem('threekingdom-caocao');
-            location.reload();
-        }
-    },
-
-    startLoop: function() {
-        // 回合制手动，不需要自动循环
-    }
 };
