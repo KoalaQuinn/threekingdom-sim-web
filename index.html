@@ -11,70 +11,222 @@
             margin: 0;
             padding: 0;
         }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
         body {
             font-family: "Noto Serif SC", "STKaiti", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: radial-gradient(ellipse at center, #1a0a00 0%, #2d1508 50%, #1a0a00 100%);
             color: #ffdead;
-            min-height: 100vh;
-            padding: 10px;
         }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .header-card {
-            background: rgba(60, 30, 15, 0.8);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(210, 105, 30, 0.4);
-            box-shadow: 0 0 20px rgba(210, 105, 30, 0.15);
-        }
-        .version {
-            text-align: left;
-            font-size: 12px;
-            color: #cd853f;
-            margin-bottom: 5px;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 5px;
-            color: #ffdead;
-            text-shadow: 0 0 10px rgba(210, 105, 30, 0.5);
-            font-size: 24px;
-        }
-        /* 底部三个Tab */
-        .tabs {
+        .game-container {
             display: flex;
-            background: rgba(60, 30, 15, 0.8);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(210, 105, 30, 0.4);
+            flex-direction: column;
+            height: 100vh;
         }
-        .tab {
+        /* ========== 顶部状态区 ========== */
+        .status-bar {
+            background: rgba(60, 30, 15, 0.9);
+            border-bottom: 1px solid rgba(210, 105, 30, 0.4);
+            padding: 6px 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+        .date-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .date-text {
+            font-size: 14px;
+            color: #cd853f;
+        }
+        .ap-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ap-text {
+            font-size: 14px;
+            color: #cd853f;
+        }
+        .progress-bar {
+            width: 80px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(210, 105, 30, 0.3);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #cd853f, #daa520);
+            transition: width 0.3s;
+        }
+        /* 属性资源图标行 */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .stat-item {
             flex: 1;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(210, 105, 30, 0.2);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 13px;
+        }
+        .stat-icon {
+            font-size: 16px;
+        }
+        .stat-value {
+            flex: 1;
+            text-align: right;
+            font-weight: bold;
+        }
+        /* ========== 中间地图区 ========== */
+        .map-area {
+            flex: 1;
+            overflow-y: auto;
             padding: 10px;
+            min-height: 50%;
+        }
+        .location-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted rgba(210, 105, 30, 0.4);
+        }
+        .location-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .location-card {
+            background: rgba(210, 105, 30, 0.2);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 8px;
+            padding: 15px;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 14px;
         }
-        .tab.active {
+        .location-card:hover {
+            background: rgba(210, 105, 30, 0.35);
+            box-shadow: 0 0 10px rgba(210, 105, 30, 0.3);
+        }
+        .location-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .location-desc {
+            font-size: 12px;
+            color: #deb887;
+        }
+        /* 大地图城池 */
+        .city-map {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .city-node {
+            background: rgba(210, 105, 30, 0.2);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .city-node:hover {
+            background: rgba(210, 105, 30, 0.35);
+        }
+        .city-name {
+            font-weight: bold;
+        }
+        .city-level {
+            font-size: 12px;
+            color: #deb887;
+        }
+        /* 事件日志 */
+        .event-log {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .event-log p {
+            margin-bottom: 5px;
+            border-bottom: 1px dotted rgba(210, 105, 30, 0.3);
+            padding-bottom: 3px;
+        }
+        /* ========== 底部功能Tab ========== */
+        .bottom-tabs {
+            display: flex;
+            background: rgba(60, 30, 15, 0.9);
+            border-top: 1px solid rgba(210, 105, 30, 0.4);
+            flex-shrink: 0;
+        }
+        .bottom-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .bottom-tab.active {
             background: rgba(210, 105, 30, 0.5);
-            box-shadow: 0 0 10px rgba(210, 105, 30, 0.5);
         }
-        .tab-content {
-            display: none;
-            background: rgba(60, 30, 15, 0.8);
-            border-radius: 10px;
-            padding: 15px;
-            min-height: 60vh;
-            border: 1px solid rgba(210, 105, 30, 0.4);
-            box-shadow: 0 0 20px rgba(210, 105, 30, 0.1);
-        }
-        .tab-content.active {
+        .tab-icon {
+            font-size: 20px;
             display: block;
+            margin-bottom: 2px;
+        }
+        /* ========== 弹窗 ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 200;
+        }
+        .modal.show {
+            display: block;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a0a00;
+            border: 2px solid rgba(210, 105, 30, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
+        }
+        .modal-text {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .modal-options {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         button {
             background: linear-gradient(135deg, #cd853f 0%, #daa520 100%);
@@ -100,135 +252,31 @@
             box-shadow: none;
             transform: none;
         }
-        .stat-card {
+        /* 角色面板 */
+        .attr-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .attr-card {
             background: rgba(210, 105, 30, 0.2);
             border: 1px solid rgba(210, 105, 30, 0.3);
             border-radius: 8px;
             padding: 10px;
-            margin-bottom: 10px;
         }
-        .stats-row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
+        .attr-name {
+            font-size: 14px;
+            color: #cd853f;
+            margin-bottom: 4px;
         }
-        .stats-row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
+        .attr-value {
+            font-size: 18px;
+            font-weight: bold;
         }
-        .stats-row-4 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .stat-item {
-            background: rgba(210, 105, 30, 0.2);
-            border: 1px solid rgba(210, 105, 30, 0.3);
-            padding: 8px;
-            border-radius: 6px;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 4px;
-            border: 1px solid rgba(210, 105, 30, 0.3);
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #cd853f, #daa520);
-            transition: width 0.3s;
-        }
-        h2 {
-            margin-bottom: 10px;
-            color: #ffdead;
-            text-shadow: 0 0 8px rgba(210, 105, 30, 0.3);
-            font-size: 20px;
-        }
-        h3 {
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-        /* 行动按钮 */
-        .action-grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .action-grid-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        /* 地点按钮 */
-        .location-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        /* 事件弹窗 */
-        .event-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 200;
-        }
-        .event-modal.show {
-            display: block;
-        }
-        .event-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a0a00;
-            border: 2px solid rgba(210, 105, 30, 0.6);
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 450px;
-            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
-        }
-        .event-text {
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        .event-option {
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .event-option button {
-            text-align: left;
-            white-space: pre-wrap;
-            padding: 10px;
-        }
-        /* 天下大势日志 */
-        .history-log {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 6px;
-        }
-        .history-log p {
-            margin-bottom: 5px;
-            border-bottom: 1px dotted rgba(210, 105, 30, 0.3);
-            padding-bottom: 3px;
+        .attr-exp {
+            font-size: 12px;
+            color: #deb887;
         }
         /* NPC 羁绊 */
         .npc-item {
@@ -241,33 +289,6 @@
             border-radius: 6px;
             margin-bottom: 8px;
         }
-        /* 设置弹窗 */
-        .settings-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 100;
-        }
-        .settings-modal.show {
-            display: block;
-        }
-        .settings-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a0a00;
-            border: 1px solid rgba(210, 105, 30, 0.5);
-            padding: 20px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 0 30px rgba(210, 105, 30, 0.4);
-        }
         /* 浮动通知 */
         .notice {
             position: fixed;
@@ -278,175 +299,128 @@
             font-weight: bold;
             color: #ffdead;
             background: rgba(0, 0, 0, 0.8);
-            padding: 20px 30px;
+            padding: 15px 25px;
             border-radius: 10px;
             z-index: 50;
         }
-        /* 战斗面板 */
-        .battle-log {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
+        /* 背包面板 */
+        .empty-tip {
+            text-align: center;
+            padding: 30px;
+            color: #cd853f;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-card">
-            <div class="version">v0.1 (2026-03-17 01:30) - 三国立志传：草莽英雄</div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>⚔️ 草莽英雄 ⚔️</h1>
-                <button id="openSettingsBtn" onclick="game.openSettings()" style="padding: 5px 10px; font-size: 14px;">⚙ 设置</button>
-            </div>
-        </div>
-
-        <div class="tabs">
-            <div class="tab active" onclick="game.switchTab('fortress')">我的领地</div>
-            <div class="tab" onclick="game.switchTab('city')">州郡街市</div>
-            <div class="tab" onclick="game.switchTab('history')">天下大势</div>
-        </div>
-
-        <!-- 我的领地 -->
-        <div id="fortress" class="tab-content active">
-            <div class="stats-row-3">
-                <div class="stat-item">
-                    <div>年份</div>
-                    <p style="font-size: 18px;"><span id="yearText">184</span></p>
+    <div class="game-container">
+        <!-- 顶部状态区 -->
+        <div class="status-bar">
+            <div class="date-row">
+                <div class="date-text">
+                    📅 <span id="dateText">184年 1月</span>
                 </div>
-                <div class="stat-item">
-                    <div>月份</div>
-                    <p style="font-size: 18px;"><span id="monthText">1</span></p>
-                </div>
-                <div class="stat-item">
-                    <div>行动力</div>
-                    <p style="font-size: 18px;"><span id="apText">5</span>/<span id="apMaxText">5</span></p>
-                </div>
-            </div>
-
-            <!-- 主角属性 -->
-            <div class="stat-card">
-                <h2>👤 主角属性</h2>
-                <div class="stats-row-4">
-                    <div class="stat-item">
-                        <div>武力</div>
-                        <p style="font-size: 16px;"><span id="forceVal">40</span><br>Lv.<span id="forceLv">1</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>智力</div>
-                        <p style="font-size: 16px;"><span id="intVal">40</span><br>Lv.<span id="intLv">1</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>魅力</div>
-                        <p style="font-size: 16px;"><span id="chaVal">40</span><br>Lv.<span id="chaLv">1</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>统率</div>
-                        <p style="font-size: 16px;"><span id="comVal">30</span><br>Lv.<span id="comLv">1</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 核心资源 -->
-            <div class="stat-card">
-                <h2>💰 资源</h2>
-                <div class="stats-row-4">
-                    <div class="stat-item">
-                        <div>金钱</div>
-                        <p style="font-size: 18px;"><span id="moneyText">100</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>粮食</div>
-                        <p style="font-size: 18px;"><span id="grainText">150</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>人口</div>
-                        <p style="font-size: 18px;"><span id="peopleText">50</span></p>
-                    </div>
-                    <div class="stat-item">
-                        <div>士兵</div>
-                        <p style="font-size: 18px;"><span id="soldierText">0</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 领地信息 -->
-            <div class="stat-card">
-                <h2>🏰 领地</h2>
-                <p>等级：Lv<span id="fortLv">1</span> - <span id="fortName">破败草庐</span></p>
-                <p>每月消耗：<span id="fortUpkeep">10</span> 粮食</p>
-                <p>每月产出：<span id="fortYield">15 粮食, 0 金钱</span></p>
-                <button id="btnUpgradeFort" onclick="game.upgradeFortress()" style="width: 100%; margin-top: 10px;" disabled>升级领地</button>
-            </div>
-
-            <!-- 本月行动 -->
-            <div class="stat-card">
-                <h2>🚶 本月行动</h2>
-                <p>每个行动消耗 1 点行动力</p>
-                <div class="action-grid-2">
-                    <button onclick="game.actionClearLand()" id="btnActionClear">开垦荒地<br><small>(+粮食 - 1AP)</small></button>
-                    <button onclick="game.actionStudy()" id="btnActionStudy">闭门读书<br><small>(+智力经验 - 1AP)</small></button>
-                </div>
-                <div class="action-grid-2" style="margin-top: 8px;">
-                    <button onclick="game.actionTrain()" id="btnActionTrain">习武练兵<br><small>(+武力经验 - 1AP)</small></button>
-                    <button onclick="game.actionSocial()" id="btnActionSocial">结交豪杰<br><small>(+魅力经验 - 1AP)</small></button>
-                </div>
-                <div class="progress-bar" style="margin-top: 10px;">
-                    <div id="apBar" class="progress-fill" style="width: 100%;"></div>
-                </div>
-            </div>
-
-            <!-- 结束本月 -->
-            <div class="stat-card">
-                <button id="btnEndMonth" onclick="game.endMonth()" style="width: 100%; font-size: 18px; padding: 15px;">结束本月</button>
-            </div>
-
-            <!-- 离线积累 -->
-            <div class="stat-card">
-                <h2>💎 离线积累</h2>
-                <p>关闭网页后，每月自动积累，最多存 12 个月，手动领取。</p>
-                <div style="margin-top: 10px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span>积累月份</span>
-                        <span><span id="offlineMonth">0</span> / 12</span>
-                    </div>
+                <div class="ap-row">
+                    <span class="ap-text">💪 行动力: <span id="apText">5</span>/<span id="apMaxText">5</span></span>
                     <div class="progress-bar">
-                        <div id="offlineBar" class="progress-fill" style="width: 0%;"></div>
+                        <div id="apBar" class="progress-fill" style="width: 100%"></div>
                     </div>
                 </div>
-                <button id="btnClaimOffline" onclick="game.claimOffline()" disabled style="width: 100%;">领取积累资源</button>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-icon">⚔️</span>
+                    <span>武力</span>
+                    <span class="stat-value" id="statForce">40</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🧠</span>
+                    <span>智力</span>
+                    <span class="stat-value" id="statInt">40</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">💬</span>
+                    <span>魅力</span>
+                    <span class="stat-value" id="statCha">40</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">📋</span>
+                    <span>统率</span>
+                    <span class="stat-value" id="statCom">30</span>
+                </div>
+            </div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-icon">💰</span>
+                    <span>金钱</span>
+                    <span class="stat-value" id="resMoney">100</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🌾</span>
+                    <span>粮食</span>
+                    <span class="stat-value" id="resGrain">150</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">👥</span>
+                    <span>人口</span>
+                    <span class="stat-value" id="resPeople">50</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⚔️</span>
+                    <span>士兵</span>
+                    <span class="stat-value" id="resSoldier">0</span>
+                </div>
             </div>
         </div>
 
-        <!-- 州郡街市 -->
-        <div id="city" class="tab-content">
-            <div class="stat-card">
-                <h3>📍 选择地点</h3>
-                <div class="location-buttons">
-                    <button onclick="game.showGov()">🏛️ 官署<br><small>接取政务</small></button>
-                    <button onclick="game.showTavern()">🍶 酒馆<br><small>结交豪杰</small></button>
-                    <button onclick="game.showMarket()">🏪 市集<br><small>买卖物资</small></button>
-                </div>
-            </div>
-            <div id="locationContent" class="stat-card">
-                <p>请点击上方选择一个地点...</p>
-            </div>
+        <!-- 中间地图场景区 -->
+        <div class="map-area" id="mapArea">
+            <!-- JS 渲染 -->
         </div>
 
-        <!-- 天下大势 -->
-        <div id="history" class="tab-content">
-            <div class="stat-card">
-                <h2>📜 经历日志</h2>
-                <div id="historyLog" class="history-log">
-                    <p>184年 1月：黄巾起义爆发，天下大乱，你流落乡野...</p>
-                </div>
+        <!-- 底部功能Tab -->
+        <div class="bottom-tabs">
+            <div class="bottom-tab active" onclick="game.switchBottomTab('map')">
+                <span class="tab-icon">🗺️</span>
+                <span>地图</span>
             </div>
-            <div class="stat-card" style="margin-top: 10px;">
-                <h2>👥 NPC 羁绊</h2>
-                <div id="npcList"></div>
+            <div class="bottom-tab" onclick="game.switchBottomTab('character')">
+                <span class="tab-icon">👤</span>
+                <span>角色</span>
             </div>
+            <div class="bottom-tab" onclick="game.switchBottomTab('backpack')">
+                <span class="tab-icon">🎒</span>
+                <span>背包</span>
+            </div>
+            <div class="bottom-tab" onclick="game.switchBottomTab('log')">
+                <span class="tab-icon">📜</span>
+                <span>日志</span>
+            </div>
+            <div class="bottom-tab" onclick="game.switchBottomTab('npc')">
+                <span class="tab-icon">👥</span>
+                <span>羁绊</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 (从底部tab打开) -->
+    <div id="settingsModal" class="modal" onclick="if (event.target == this) game.closeModal();">
+        <div class="modal-content">
+            <h2>⚙ 设置</h2>
+            <div style="margin-top: 20px;">
+                <p><strong>重置游戏</strong></p>
+                <p>清空当前存档，重新开始游戏。</p>
+                <button onclick="game.resetGame()" style="margin-top: 10px; background: #a83232;">确认重置</button>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="game.closeModal();">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 事件弹窗 -->
+    <div id="eventModal" class="modal" onclick="if (event.target == this) {}">
+        <div id="eventModalContent" class="modal-content">
+            <!-- JS 渲染 -->
         </div>
     </div>
 
@@ -456,20 +430,5 @@
             game.init();
         });
     </script>
-
-    <!-- 设置弹窗 -->
-    <div id="settingsModal" class="settings-modal" onclick="if (event.target == this) game.closeSettings();">
-        <div class="settings-content">
-            <h2>⚙ 游戏设置</h2>
-            <div style="margin-top: 20px;">
-                <p><strong>重置游戏</strong></p>
-                <p>清空当前存档，重新开始游戏。</p>
-                <button onclick="game.resetGame()" style="margin-top: 10px; background: #a83232;">确认重置</button>
-            </div>
-            <div style="margin-top: 20px; text-align: right;">
-                <button onclick="game.closeSettings()">关闭</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

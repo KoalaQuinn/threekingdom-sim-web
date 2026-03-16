@@ -1,4 +1,5 @@
 // 三国立志传：草莽英雄 - 纯JavaScript框架
+// 新UI布局：顶部状态+中间地图+底部功能Tab
 // 核心：乱世小人物成长，月为回合，开放无结局
 // 事件系统支持Excel配置导出JSON
 
@@ -8,6 +9,86 @@ const game = {
         year: 184,
         month: 1,
     },
+
+    // 当前场景：玩家在 "zhuojun" 涿郡城内 / "world" 大地图
+    currentScene: "zhuojun",
+
+    // 涿郡城内地点列表
+    cityLocations: [
+        {
+            id: "gate",
+            name: "城门",
+            desc: "出城进入大地图",
+            action: () => game.enterWorldMap(),
+        },
+        {
+            id: "gov",
+            name: "郡府官署",
+            desc: "接取徭役任务，获得金钱",
+            action: () => game.showGovTask(),
+        },
+        {
+            id: "tavern",
+            name: "城门酒馆",
+            desc: "打听消息，结交豪杰",
+            action: () => game.enterTavern(),
+        },
+        {
+            id: "market",
+            name: "郡县市集",
+            desc: "买卖粮食物资",
+            action: () => game.showMarket(),
+        },
+        {
+            id: "farm",
+            name: "城外荒地",
+            desc: "亲自开垦，获得粮食",
+            action: () => game.actionClearLand(),
+        },
+        {
+            id: "study",
+            name: "自家书屋",
+            desc: "闭门读书，增加智力",
+            action: () => game.actionStudy(),
+        },
+        {
+            id: "train",
+            name: "校场练兵",
+            desc: "习武练兵，增加武力统率",
+            action: () => game.actionTrain(),
+        },
+        {
+            id: "social",
+            name: "乡野游走",
+            desc: "结交豪杰，增加魅力",
+            action: () => game.actionSocial(),
+        },
+    ],
+
+    // 大地图城池
+    worldCities: [
+        {
+            id: "zhuojun",
+            name: "涿郡",
+            level: "县城",
+            description: "你的家乡，黄巾起兵的地方",
+            enter: () => game.enterCity("zhuojun"),
+        },
+        {
+            id: "guangyang",
+            name: "广阳",
+            level: "郡城",
+            description: "幽州治所，较为繁华",
+            enter: () => game.enterCity("guangyang"),
+        },
+        {
+            id: "xiaopei",
+            name: "小沛",
+            level: "县城",
+            description: "徐州边境小城",
+            enter: () => game.enterCity("xiaopei"),
+        },
+    ],
 
     // 四大属性：武力/智力/魅力/统率
     player: {
@@ -94,12 +175,18 @@ const game = {
     // 历史日志
     log: ["184年 1月：黄巾起义爆发，天下大乱，你流落乡野..."],
 
+    // 背包（MVP空着，后续扩展）
+    backpack: [],
+
     // 离线积累
     offline: {
         months: 0,
         maxMonths: 12,
         lastUpdate: Date.now(),
     },
+
+    // 当前打开的底部Tab
+    currentBottomTab: "map",
 
     // 事件列表（后续可以导入JSON）
     events: [
@@ -114,7 +201,7 @@ const game = {
             opt1_success_text: "你击败了黄巾残党，缴获 150 钱",
             opt1_success_reward: JSON.stringify({money: 150, exp_force: 5}),
             opt1_fail_text: "你击退了黄巾，但被抢走一半粮食",
-            opt1_fail_reward: JSON.stringify({grain: "floor(game.res.grain / 2)"}),
+            opt1_fail_reward: JSON.stringify({grain: "Math.floor(game.res.grain / 2)"}),
             opt2_text: "【破财消灾】 交出 100 粮食，安全过关",
             opt2_success_text: "黄巾拿了粮食走了，你安全过关",
             opt2_success_reward: JSON.stringify({grain: -100}),
@@ -146,7 +233,9 @@ const game = {
     init: function() {
         this.load();
         this.calcOffline();
-        this.renderAll();
+        this.renderStatusBar();
+        this.renderMapArea();
+        this.renderBottomTab();
         this.checkDateEvents(); // 检查当前月份触发事件
     },
 
@@ -154,12 +243,14 @@ const game = {
     save: function() {
         localStorage.setItem("sangoku-caocao", JSON.stringify({
             date: this.date,
+            currentScene: this.currentScene,
             player: this.player,
             res: this.res,
             fortLv: this.fortLv,
             ap: this.ap,
             npcs: this.npcs,
             log: this.log,
+            backpack: this.backpack,
             offline: this.offline,
         }));
     },
@@ -186,7 +277,7 @@ const game = {
         months = Math.min(months, this.offline.maxMonths - this.offline.months);
         if (months <= 0) return;
         this.offline.months += months;
-        this.render();
+        this.renderStatusBar();
     },
 
     claimOffline: function() {
@@ -201,7 +292,7 @@ const game = {
         this.offline.months = 0;
         this.offline.lastUpdate = Date.now();
         this.save();
-        this.render();
+        this.renderAll();
         this.notice(`领取了 ${this.offline.months} 个月产出！`);
     },
 
@@ -212,7 +303,7 @@ const game = {
             return false;
         }
         this.ap--;
-        this.render();
+        this.renderStatusBar();
         this.save();
         return true;
     },
@@ -227,12 +318,13 @@ const game = {
             this.player[attr].val += 5;
             const name = attr === 'force' ? '武力' : attr === 'intel' ? '智力' : attr === 'charisma' ? '魅力' : '统率';
             this.notice(`${name} 升级！Lv.${this.player[attr].lv}`);
+            this.renderStatusBar();
             return true;
         }
         return false;
     },
 
-    // === 领地行动 ===
+    // === 行动 ===
     // 1. 开垦荒地
     actionClearLand: function() {
         if (!this.useAP()) return;
@@ -243,7 +335,8 @@ const game = {
         this.player.force.exp += 5;
         this.checkAttrLevelUp('force');
         this.addLog(`你亲自开垦荒地，获得 ${gain} 粮食`);
-        this.render();
+        this.renderAll();
+        this.renderMapArea();
     },
 
     // 2. 闭门读书
@@ -252,7 +345,8 @@ const game = {
         this.player.intel.exp += 10;
         this.checkAttrLevelUp('intel');
         this.addLog(`你闭门读书，智力经验 +10`);
-        this.render();
+        this.renderAll();
+        this.renderMapArea();
     },
 
     // 3. 习武练兵
@@ -263,7 +357,8 @@ const game = {
         this.checkAttrLevelUp('force');
         this.checkAttrLevelUp('command');
         this.addLog(`你习武练兵，武力经验 +8，统率经验 +5`);
-        this.render();
+        this.renderAll();
+        this.renderMapArea();
     },
 
     // 4. 结交豪杰
@@ -272,7 +367,8 @@ const game = {
         this.player.charisma.exp += 10;
         this.checkAttrLevelUp('charisma');
         this.addLog(`你游走乡野结交豪杰，魅力经验 +10`);
-        this.render();
+        this.renderAll();
+        this.renderMapArea();
     },
 
     // 领地升级
@@ -292,22 +388,33 @@ const game = {
         this.fortLv = next;
         this.addLog(`领地升级 → ${def.name}`);
         this.save();
-        this.render();
+        this.renderAll();
         this.notice(`领地升级成功！${def.name}`);
+    },
+
+    // === 场景切换 ===
+    enterWorldMap: function() {
+        this.currentScene = "world";
+        this.renderMapArea();
+    },
+
+    enterCity: function(cityId) {
+        this.currentScene = cityId;
+        this.renderMapArea();
     },
 
     // === 州郡街市 ===
     // 1. 官署
-    showGov: function() {
+    showGovTask: function() {
         if (!this.useAP()) return;
-        const html = `
+        let html = `
             <h3>🏛️ 郡府徭役</h3>
-            <p>郡守招收徭役，完成工程任务，按能力给俸禄。</p>
-            <div class="event-option">
+            <p class="modal-text">郡守招收徭役，完成工程任务，按能力给俸禄。</p>
+            <div class="modal-options">
                 <button onclick="game.doGovTask()">接受任务（智力检定 > 50）</button>
             </div>
         `;
-        document.getElementById('locationContent').innerHTML = html;
+        this.openModal(html);
     },
 
     doGovTask: function() {
@@ -318,17 +425,19 @@ const game = {
             this.player.intel.exp += 8;
             this.checkAttrLevelUp('intel');
             this.addLog(`完成郡府徭役，获得 ${money} 金钱`);
-            this.render();
+            this.closeModal();
+            this.renderAll();
         } else {
             const money = 20;
             this.res.money += money;
             this.addLog(`徭役完成不佳，获得 ${money} 金钱`);
-            this.render();
+            this.closeModal();
+            this.renderAll();
         }
     },
 
     // 2. 酒馆
-    showTavern: function() {
+    enterTavern: function() {
         if (!this.useAP()) return;
         // 50% 刷 NPC，50% 刷随机事件
         if (Math.random() < 0.5) {
@@ -347,12 +456,12 @@ const game = {
     showNpcInvite: function(npc) {
         const html = `
             <h3>🍶 酒馆偶遇</h3>
-            <p>你在酒馆喝酒，正好碰到 ${npc.name} 一人独坐，可以花钱请客增加好感。</p>
-            <div class="event-option">
+            <p class="modal-text">你在酒馆喝酒，正好碰到 ${npc.name} 一人独坐，可以花钱请客增加好感。</p>
+            <div class="modal-options">
                 <button onclick="game.inviteNpc('${npc.name}')">请客喝酒 → 花费 30 钱，+10 好感</button>
             </div>
         `;
-        this.openEvent(html);
+        this.openModal(html);
     },
 
     inviteNpc: function(name) {
@@ -371,8 +480,8 @@ const game = {
         } else {
             this.addLog(`请 ${name} 喝酒，好感 +10`);
         }
-        this.closeEvent();
-        this.render();
+        this.closeModal();
+        this.renderAll();
     },
 
     // 3. 市集
@@ -380,15 +489,16 @@ const game = {
         if (!this.useAP()) return;
         const html = `
             <h3>🏪 郡县市集</h3>
-            <p>固定价格买卖物资</p>
-            <div class="event-option">
+            <p class="modal-text">固定价格买卖物资</p>
+            <div class="modal-options">
                 <button onclick="game.buyGrain(100)">买入 100 粮食 → 花费 50 钱</button>
                 <button onclick="game.buyGrain(500)">买入 500 粮食 → 花费 250 钱</button>
                 <button onclick="game.sellGrain(100)">卖出 100 粮食 → 得到 40 钱</button>
                 <button onclick="game.sellGrain(500)">卖出 500 粮食 → 得到 200 钱</button>
+                <button onclick="game.claimOffline()">领取离线积累资源</button>
             </div>
         `;
-        document.getElementById('locationContent').innerHTML = html;
+        this.openModal(html);
     },
 
     buyGrain: function(num) {
@@ -400,7 +510,8 @@ const game = {
         this.res.money -= cost;
         this.res.grain += num;
         this.addLog(`市集买入 ${num} 粮食`);
-        this.render();
+        this.closeModal();
+        this.renderAll();
     },
 
     sellGrain: function(num) {
@@ -412,7 +523,8 @@ const game = {
         this.res.grain -= num;
         this.res.money += gain;
         this.addLog(`市集卖出 ${num} 粮食`);
-        this.render();
+        this.closeModal();
+        this.renderAll();
     },
 
     // === 检定系统 ===
@@ -435,8 +547,8 @@ const game = {
     openEventFromData: function(ev) {
         let html = `
             <h3>${ev.title}</h3>
-            <p class="event-text">${ev.description}</p>
-            <div class="event-option">
+            <p class="modal-text">${ev.description}</p>
+            <div class="modal-options">
         `;
 
         // 最多三个选项
@@ -449,12 +561,11 @@ const game = {
         html += '</div>';
         // 保存当前事件
         window.currentEvent = ev;
-        this.openEvent(html);
+        this.openModal(html);
     },
 
     chooseEvent: function(eventId, optIndex) {
         const ev = window.currentEvent;
-        const opt = ev[`opt${optIndex}`];
         const attrKey = ev[`opt${optIndex}_attr`];
         const diff = ev[`opt${optIndex}_diff`];
 
@@ -479,8 +590,8 @@ const game = {
             this.notice(failText);
         }
 
-        this.closeEvent();
-        this.render();
+        this.closeModal();
+        this.renderAll();
         delete window.currentEvent;
     },
 
@@ -556,16 +667,16 @@ const game = {
         this.checkDateEvents();
 
         this.save();
-        this.render();
+        this.renderAll();
         this.notice("新的一月开始了");
     },
 
     gameOver: function() {
-        this.openEvent(`
+        this.openModal(`
             <h2>💀 游戏结束</h2>
-            <p>你没有粮食，最终饿死在了领地...</p>
+            <p class="modal-text">你没有粮食，最终饿死在了领地...</p>
             <p>终年 ${this.date.year} 年 ${this.date.month} 月</p>
-            <div class="event-option">
+            <div class="modal-options">
                 <button onclick="location.reload()">重新开始</button>
             </div>
         `);
@@ -573,123 +684,228 @@ const game = {
 
     // === UI 渲染 ===
     renderAll: function() {
-        // 日期
-        document.getElementById('yearText').textContent = this.date.year;
-        document.getElementById('monthText').textContent = this.date.month;
+        this.renderStatusBar();
+        this.renderBottomTab();
+        this.renderMapArea();
+    },
 
-        // 属性
-        document.getElementById('forceVal').textContent = this.player.force.val;
-        document.getElementById('forceLv').textContent = this.player.force.lv;
-        document.getElementById('intVal').textContent = this.player.intel.val;
-        document.getElementById('intLv').textContent = this.player.intel.lv;
-        document.getElementById('chaVal').textContent = this.player.charisma.val;
-        document.getElementById('chaLv').textContent = this.player.charisma.lv;
-        document.getElementById('comVal').textContent = this.player.command.val;
-        document.getElementById('comLv').textContent = this.player.command.lv;
-
-        // 资源
-        document.getElementById('moneyText').textContent = this.res.money.toLocaleString();
-        document.getElementById('grainText').textContent = this.res.grain.toLocaleString();
-        document.getElementById('peopleText').textContent = this.res.people.toLocaleString();
-        document.getElementById('soldierText').textContent = this.res.soldier.toLocaleString();
-
-        // 领地
-        const f = this.currentFort;
-        document.getElementById('fortLv').textContent = f.lv;
-        document.getElementById('fortName').textContent = f.name;
-        document.getElementById('fortUpkeep').textContent = f.upkeepGrain + `(+${this.res.soldier} 士兵) = ${f.upkeepGrain + this.res.soldier}`;
-        document.getElementById('fortYield').textContent = `${f.yieldGrain} 粮食, ${f.yieldMoney} 金钱`;
-
-        // 行动力
+    // 顶部状态栏
+    renderStatusBar: function() {
+        document.getElementById('dateText').textContent = `${this.date.year}年 ${this.date.month}月`;
         document.getElementById('apText').textContent = `${this.ap}`;
         document.getElementById('apMaxText').textContent = `${this.apMax}`;
         document.getElementById('apBar').style.width = `${(this.ap / this.apMax) * 100}%`;
 
-        // 升级按钮
-        const canUpgrade = this.fortLv < this.fortDef.length;
-        if (canUpgrade) {
-            const next = this.fortDef[this.fortLv];
-            document.getElementById('btnUpgradeFort').disabled = !(this.res.money >= next.costMoney && this.res.grain >= next.costGrain);
-        } else {
-            document.getElementById('btnUpgradeFort').disabled = true;
-        }
+        // 属性
+        document.getElementById('statForce').textContent = this.player.force.val;
+        document.getElementById('statInt').textContent = this.player.intel.val;
+        document.getElementById('statCha').textContent = this.player.charisma.val;
+        document.getElementById('statCom').textContent = this.player.command.val;
 
-        // 行动按钮禁用
-        document.getElementById('btnActionClear').disabled = this.ap <= 0;
-        document.getElementById('btnActionStudy').disabled = this.ap <= 0;
-        document.getElementById('btnActionTrain').disabled = this.ap <= 0;
-        document.getElementById('btnActionSocial').disabled = this.ap <= 0;
-
-        // 离线
-        document.getElementById('offlineMonth').textContent = this.offline.months;
-        document.getElementById('offlineBar').style.width = `${(this.offline.months / this.offline.maxMonths) * 100}%`;
-        document.getElementById('btnClaimOffline').disabled = this.offline.months <= 0;
-
-        // NPC 列表
-        this.renderNpcList();
+        // 资源
+        document.getElementById('resMoney').textContent = this.res.money.toLocaleString();
+        document.getElementById('resGrain').textContent = this.res.grain.toLocaleString();
+        document.getElementById('resPeople').textContent = this.res.people.toLocaleString();
+        document.getElementById('resSoldier').textContent = this.res.soldier.toLocaleString();
     },
 
-    render: this.renderAll,
+    // 中间地图区
+    renderMapArea: function() {
+        const container = document.getElementById('mapArea');
+        if (this.currentBottomTab !== 'map') {
+            // 如果不是地图Tab，显示对应内容
+            this.renderNonMapTab(container);
+            return;
+        }
 
-    renderNpcList: function() {
-        const container = document.getElementById('npcList');
-        let html = '';
-        for (let key in this.npcs) {
-            const npc = this.npcs[key];
+        if (this.currentScene === 'world') {
+            // 大地图
+            let html = `<div class="location-title">🗺️ 天下大势</div><div class="city-map">`;
+            this.worldCities.forEach(city => {
+                html += `
+                    <div class="city-node" onclick="game.worldCities[${this.worldCities.findIndex(c => c.id === city.id)}].enter()">
+                        <div class="city-name">${city.name}</div>
+                        <div class="city-level">${city.level}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            // 添加离线领取按钮
+            if (this.offline.months > 0) {
+                html += `
+                    <div class="location-card" style="margin-top: 10px;">
+                        <div class="location-name">💎 离线积累</div>
+                        <div class="location-desc">已经积累 ${this.offline.months}/${this.offline.maxMonths} 个月，点击领取</div>
+                        <button onclick="game.claimOffline()" style="width: 100%; margin-top: 8px;">领取资源</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            return;
+        } else {
+            // 城内显示地点列表
+            let html = `<div class="location-title">🏙️ ${this.getCurrentCityName()}</div><div class="location-grid">`;
+            this.cityLocations.forEach(loc => {
+                html += `
+                    <div class="location-card" onclick="game.cityLocations[${this.cityLocations.findIndex(l => l.id === loc.id)}].action()">
+                        <div class="location-name">${loc.name}</div>
+                        <div class="location-desc">${loc.desc}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            // 添加结束本月按钮
             html += `
-                <div class="npc-item">
-                    <div>
-                        <strong>${npc.name}</strong>
-                        ${npc.unlocked ? `<br><small>羁绊已解锁</small>` : `<br><small>好感：${npc.affinity}/100</small>`}
+                <div class="location-card" style="margin-top: 10px;">
+                    <div class="location-name">📅 结束本月</div>
+                    <div class="location-desc">结算本月产出消耗，进入下一月</div>
+                    <button onclick="game.endMonth()" style="width: 100%; margin-top: 8px;">结束本月</button>
+                </div>
+            `;
+            // 显示领地升级
+            if (this.fortLv < this.fortDef.length) {
+                const next = this.fortDef[this.fortLv];
+                const can = this.res.money >= next.costMoney && this.res.grain >= next.costGrain;
+                html += `
+                    <div class="location-card" style="margin-top: 10px;">
+                        <div class="location-name">🏰 升级领地</div>
+                        <div class="location-desc">当前：${this.currentFort.name} → 下一级：${next.name}<br>消耗：${next.costMoney} 钱 ${next.costGrain} 粮</div>
+                        <button onclick="game.upgradeFortress()" ${!can ? "disabled" : ""} style="width: 100%; margin-top: 8px;">升级领地</button>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+    },
+
+    getCurrentCityName: function() {
+        if (this.currentScene === 'zhuojun') return "涿郡城内";
+        const city = this.worldCities.find(c => c.id === this.currentScene);
+        return city ? city.name : this.currentScene;
+    },
+
+    // 底部Tab切换
+    switchBottomTab: function(tabId) {
+        this.currentBottomTab = tabId;
+        this.renderBottomTab();
+        this.renderMapArea();
+    },
+
+    renderBottomTab: function() {
+        document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
+        const tabs = ["map", "character", "backpack", "log", "npc"];
+        tabs.forEach((tab, i) => {
+            if (tab === this.currentBottomTab) {
+                document.querySelectorAll('.bottom-tab')[i].classList.add('active');
+            }
+        });
+    },
+
+    renderNonMapTab: function(container) {
+        if (this.currentBottomTab === 'character') {
+            // 角色详细属性
+            let html = `
+                <h3>👤 角色信息</h3>
+                <div class="attr-row">
+                    <div class="attr-card">
+                        <div class="attr-name">⚔️ 武力</div>
+                        <div class="attr-value">${this.player.force.val}</div>
+                        <div class="attr-exp">Lv.${this.player.force.lv} 经验: ${this.player.force.exp}/${this.player.force.lv * 10}</div>
+                    </div>
+                    <div class="attr-card">
+                        <div class="attr-name">🧠 智力</div>
+                        <div class="attr-value">${this.player.intel.val}</div>
+                        <div class="attr-exp">Lv.${this.player.intel.lv} 经验: ${this.player.intel.exp}/${this.player.intel.lv * 10}</div>
+                    </div>
+                </div>
+                <div class="attr-row">
+                    <div class="attr-card">
+                        <div class="attr-name">💬 魅力</div>
+                        <div class="attr-value">${this.player.charisma.val}</div>
+                        <div class="attr-exp">Lv.${this.player.charisma.lv} 经验: ${this.player.charisma.exp}/${this.player.charisma.lv * 10}</div>
+                    </div>
+                    <div class="attr-card">
+                        <div class="attr-name">📋 统率</div>
+                        <div class="attr-value">${this.player.command.val}</div>
+                        <div class="attr-exp">Lv.${this.player.command.lv} 经验: ${this.player.command.exp}/${this.player.command.lv * 10}</div>
+                    </div>
+                </div>
+                <div class="attr-row" style="margin-top: 15px;">
+                    <div class="attr-card">
+                        <div class="attr-name">🏰 领地</div>
+                        <div class="attr-value">${this.currentFort.name}</div>
+                        <div class="attr-exp">Lv.${this.currentFort.lv}</div>
                     </div>
                 </div>
             `;
+            container.innerHTML = html;
+            return;
         }
-        container.innerHTML = html;
+
+        if (this.currentBottomTab === 'backpack') {
+            if (this.backpack.length === 0) {
+                container.innerHTML = `<div class="empty-tip">背包还是空的...</div>`;
+            } else {
+                let html = `<h3>🎒 背包</h3>`;
+                this.backpack.forEach(item => {
+                    html += `<div class="npc-item">
+                        <div><strong>${item.name}</strong></div>
+                        <div>x${item.count}</div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            return;
+        }
+
+        if (this.currentBottomTab === 'log') {
+            let html = `<h3>📜 经历日志</h3><div class="event-log">`;
+            [...this.log].reverse().forEach(line => {
+                html += `<p>${line}</p>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            return;
+        }
+
+        if (this.currentBottomTab === 'npc') {
+            let html = `<h3>👥 NPC 羁绊</h3>`;
+            for (let key in this.npcs) {
+                const npc = this.npcs[key];
+                html += `
+                    <div class="npc-item">
+                        <div>
+                            <strong>${npc.name}</strong>
+                            ${npc.unlocked ? `<br><small>羁绊已解锁</small>` : `<br><small>好感：${npc.affinity}/100</small>`}
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            return;
+        }
     },
 
     addLog: function(text) {
         this.log.push(`${this.date.year}年 ${this.date.month}月：${text}`);
-        const container = document.getElementById('historyLog');
-        let html = '';
-        // 反转，最新放上面
-        [...this.log].reverse().forEach(line => {
-            html += `<p>${line}</p>`;
-        });
-        container.innerHTML = html;
-    },
-
-    // === Tab切换 ===
-    switchTab: function(id) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelector(`.tab:nth-child(${this.tabIndex(id) + 1})`).classList.add('active');
-        document.getElementById(id).classList.add('active');
-    },
-
-    tabIndex: function(id) {
-        const tabs = ['fortress', 'city', 'history'];
-        return tabs.indexOf(id);
     },
 
     // === 弹窗 ===
-    openEvent: function(html) {
-        const modal = document.createElement('div');
-        modal.id = 'eventModal';
-        modal.className = 'event-modal show';
-        modal.innerHTML = `<div class="event-content">${html}</div>`;
-        document.body.appendChild(modal);
+    openModal: function(html) {
+        document.getElementById('eventModalContent').innerHTML = html;
+        document.getElementById('eventModal').classList.add('show');
     },
 
-    closeEvent: function() {
-        document.getElementById('eventModal')?.remove();
+    closeModal: function() {
+        document.getElementById('eventModal').classList.remove('show');
     },
 
     notice: function(text) {
         const n = document.createElement('div');
         n.className = 'notice';
         n.textContent = text;
-        document.querySelector('.header-card').appendChild(n);
+        document.querySelector('.status-bar').appendChild(n);
         setTimeout(() => n.remove(), 3000);
     },
 
