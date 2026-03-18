@@ -229,14 +229,143 @@ const game = {
         return this.fortDef[this.fortLv - 1];
     },
 
+    // 出身定义
+    backgrounds: [
+        {
+            name: "流民",
+            desc: "黄巾之乱中家破人亡，一无所有的逃难者",
+            force: 45,
+            intel: 35,
+            charisma: 35,
+            command: 25,
+            money: 50,
+            grain: 100,
+            people: 30,
+        },
+        {
+            name: "退役兵士",
+            desc: "打过仗，见过血，因为朝廷腐败解甲归田",
+            force: 50,
+            intel: 35,
+            charisma: 30,
+            command: 40,
+            money: 100,
+            grain: 120,
+            people: 40,
+        },
+        {
+            name: "落第书生",
+            desc: "熟读诗书，抱负不展，乱世中无法立足",
+            force: 30,
+            intel: 55,
+            charisma: 40,
+            command: 20,
+            money: 80,
+            grain: 100,
+            people: 20,
+        },
+        {
+            name: "地方豪强",
+            desc: "家族本就有地产，乱世中想保一方平安",
+            force: 40,
+            intel: 40,
+            charisma: 45,
+            command: 35,
+            money: 200,
+            grain: 300,
+            people: 80,
+        }
+    ],
+
     // === 初始化 ===
     init: function() {
-        this.load();
+        const save = localStorage.getItem("sangoku-caocao");
+        if (!save) {
+            // 新游戏，先弹出出身选择
+            this.showBackgroundSelect();
+        } else {
+            this.load();
+            this.calcOffline();
+            this.renderStatusBar();
+            this.renderMapArea();
+            this.renderBottomTab();
+            this.checkDateEvents(); // 检查当前月份触发事件
+        }
+    },
+
+    // 显示出身选择
+    showBackgroundSelect: function() {
+        let html = `
+            <h2>⚔️ 三国立志传：草莽英雄</h2>
+            <p class="modal-text">黄巾起义爆发，天下大乱。你是谁？</p>
+            <div class="modal-options">
+        `;
+        this.backgrounds.forEach((bg, index) => {
+            html += `
+                <button onclick="game.chooseBackground(${index})">
+                    <strong>${bg.name}</strong><br>
+                    <small>${bg.desc}</small><br>
+                    <small>武力:${bg.force} 智力:${bg.intel} 魅力:${bg.charisma} 统率:${bg.command}</small>
+                </button>
+            `;
+        });
+        html += '</div>';
+        this.openModal(html);
+    },
+
+    // 选择出身
+    chooseBackground: function(index) {
+        const bg = this.backgrounds[index];
+        // 应用出身属性
+        this.player.force.val = bg.force;
+        this.player.intel.val = bg.intel;
+        this.player.charisma.val = bg.charisma;
+        this.player.command.val = bg.command;
+        this.res.money = bg.money;
+        this.res.grain = bg.grain;
+        this.res.people = bg.people;
+
+        // 初始日志 + 新手引导
+        this.log = [
+            `184年 1月：黄巾起义爆发，天下大乱。你是以${bg.name}的身份流落涿郡乡野，开始了你的乱世生涯...`,
+            `184年 1月：【玩法引导】每个月有 5 点行动力，每次行动消耗 1 点`,
+            `184年 1月：【玩法引导】先去城外荒地开垦种粮，保证粮食供应，或者去郡府接任务赚钱`,
+            `184年 1月：【玩法引导】攒够资源可以升级领地，带来更多产出，解锁新功能`,
+            `184年 1月：【玩法引导】去酒馆有机会遇到三国名人，结交羁绊`,
+            `184年 1月：初始目标：先活下去，慢慢发展，成为一方豪强`
+        ];
+
+        this.closeModal();
         this.calcOffline();
         this.renderStatusBar();
         this.renderMapArea();
         this.renderBottomTab();
-        this.checkDateEvents(); // 检查当前月份触发事件
+        this.save();
+        this.notice(`出身选择完成：${bg.name}`);
+    },
+
+    // === 存档读档 ===
+    save: function() {
+        localStorage.setItem("sangoku-caocao", JSON.stringify({
+            date: this.date,
+            currentScene: this.currentScene,
+            player: this.player,
+            res: this.res,
+            fortLv: this.fortLv,
+            ap: this.ap,
+            npcs: this.npcs,
+            log: this.log,
+            backpack: this.backpack,
+            offline: this.offline,
+        }));
+    },
+
+    load: function() {
+        const save = localStorage.getItem("sangoku-caocao");
+        if (save) {
+            const data = JSON.parse(save);
+            Object.assign(this, data);
+        }
     },
 
     // === 存档读档 ===
@@ -591,7 +720,7 @@ const game = {
         }
 
         this.closeModal();
-        this.renderAll();
+        this.renderAll(); // renderAll 会刷新地图上的最近日志
         delete window.currentEvent;
     },
 
@@ -773,6 +902,16 @@ const game = {
                         <button onclick="game.upgradeFortress()" ${!can ? "disabled" : ""} style="width: 100%; margin-top: 8px;">升级领地</button>
                     </div>
                 `;
+            }
+
+            // 显示最近5条日志，让玩家知道最近发生了什么
+            if (this.log.length > 0) {
+                html += `<div class="event-log" style="margin-top: 10px;"><h4 style="margin-bottom: 8px;">最近经历</h4>`;
+                const recentLogs = this.log.slice(-5).reverse();
+                recentLogs.forEach(line => {
+                    html += `<p>${line}</p>`;
+                });
+                html += '</div>';
             }
 
             container.innerHTML = html;
