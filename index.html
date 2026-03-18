@@ -331,6 +331,70 @@
             color: #deb887;
             font-size: 14px;
         }
+        /* 属性面板 */
+        .attr-panel {
+            background: rgba(210, 105, 30, 0.15);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+        }
+        .panel-title {
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted rgba(210, 105, 30, 0.4);
+            color: #cd853f;
+            font-size: 16px;
+        }
+        /* 带进度条的属性行 */
+        .attr-row-bar {
+            margin-bottom: 10px;
+        }
+        .attr-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+            font-size: 14px;
+        }
+        .exp-bar {
+            position: relative;
+            height: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(210, 105, 30, 0.3);
+        }
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #cd853f, #daa520);
+            transition: width 0.3s;
+        }
+        .exp-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            text-align: center;
+            font-size: 12px;
+            line-height: 16px;
+            color: #1a0a00;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+        /* 纯文本信息行 */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dotted rgba(210, 105, 30, 0.2);
+            font-size: 14px;
+        }
+        .info-label {
+            color: #cd853f;
+        }
+        .info-value {
+            font-weight: bold;
+        }
         /* 底部信息栏 */
         .footer-bar {
             display: flex;
@@ -443,7 +507,7 @@
         </div>
         <!-- 底部信息栏 -->
         <div class="footer-bar">
-            <span class="version-text">⚔️ 三国立志传：草莽英雄 v1.3.0 (2026-03-19)</span>
+            <span class="version-text">⚔️ 三国立志传：草莽英雄 v1.4.0 (2026-03-19)</span>
             <button class="reset-btn" onclick="game.resetGame()">重置游戏</button>
         </div>
     </div>

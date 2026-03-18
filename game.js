@@ -971,73 +971,83 @@ const game = {
             // 获取出身名称（如果有记录）
             const bgName = this.backgroundName || "流民";
 
-            // 角色详细属性
+            // 属性列表
+            const attrs = [
+                {icon: "⚔️", name: "武力", key: "force"},
+                {icon: "🧠", name: "智力", key: "intel"},
+                {icon: "💬", name: "魅力", key: "charisma"},
+                {icon: "📋", name: "统率", key: "command"},
+            ];
+
+            // 角色详细属性 - 网游式进度条布局
             let html = `
                 <div class="character-header">
                     <h2>👤 ${bgName}</h2>
                     <p class="character-sub">生于 184年 1月，乱世中已闯荡 <strong>${totalMonths}</strong> 个月</p>
                 </div>
 
-                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #cd853f;">基础属性</h3>
-                <div class="attr-row">
-                    <div class="attr-card">
-                        <div class="attr-name">⚔️ 武力</div>
-                        <div class="attr-value">${this.player.force.val}</div>
-                        <div class="attr-exp">Lv.${this.player.force.lv} 经验: ${this.player.force.exp}/${this.player.force.lv * 10}</div>
-                    </div>
-                    <div class="attr-card">
-                        <div class="attr-name">🧠 智力</div>
-                        <div class="attr-value">${this.player.intel.val}</div>
-                        <div class="attr-exp">Lv.${this.player.intel.lv} 经验: ${this.player.intel.exp}/${this.player.intel.lv * 10}</div>
-                    </div>
-                </div>
-                <div class="attr-row">
-                    <div class="attr-card">
-                        <div class="attr-name">💬 魅力</div>
-                        <div class="attr-value">${this.player.charisma.val}</div>
-                        <div class="attr-exp">Lv.${this.player.charisma.lv} 经验: ${this.player.charisma.exp}/${this.player.charisma.lv * 10}</div>
-                    </div>
-                    <div class="attr-card">
-                        <div class="attr-name">📋 统率</div>
-                        <div class="attr-value">${this.player.command.val}</div>
-                        <div class="attr-exp">Lv.${this.player.command.lv} 经验: ${this.player.command.exp}/${this.player.command.lv * 10}</div>
-                    </div>
-                </div>
+                <div class="attr-panel">
+                    <h3 class="panel-title">基础属性</h3>
+            `;
 
-                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #cd853f;">领地信息</h3>
-                <div class="attr-row">
-                    <div class="attr-card">
-                        <div class="attr-name">🏰 当前领地</div>
-                        <div class="attr-value">${this.currentFort.name}</div>
-                        <div class="attr-exp">Lv.${this.fortLv}</div>
+            attrs.forEach(attr => {
+                const p = this.player[attr.key];
+                const needExp = p.lv * 10;
+                const expPercent = Math.floor((p.exp / needExp) * 100);
+                html += `
+                    <div class="attr-row-bar">
+                        <div class="attr-label">
+                            <span>${attr.icon} ${attr.name}</span>
+                            <span>Lv.${p.lv} <strong>${p.val}</strong></span>
+                        </div>
+                        <div class="exp-bar">
+                            <div class="exp-fill" style="width: ${expPercent}%"></div>
+                            <span class="exp-text">${p.exp}/${needExp}</span>
+                        </div>
                     </div>
-                    <div class="attr-card">
-                        <div class="attr-name">🌾 每月盈亏</div>
-                        <div class="attr-value">${this.currentFort.yieldGrain - (this.currentFort.upkeepGrain + this.res.soldier)} 粮食</div>
-                        <div class="attr-exp">+${this.currentFort.yieldMoney} 金钱</div>
+                `;
+            });
+
+            html += `</div>`;
+
+            // 领地信息
+            const grainProfit = this.currentFort.yieldGrain - (this.currentFort.upkeepGrain + this.res.soldier);
+            const profitColor = grainProfit >= 0 ? "#90ee90" : "#ff6b6b";
+
+            html += `
+                <div class="attr-panel">
+                    <h3 class="panel-title">领地信息</h3>
+                    <div class="info-row">
+                        <span class="info-label">🏰 当前领地</span>
+                        <span class="info-value">${this.currentFort.name} (Lv.${this.fortLv})</span>
                     </div>
-                </div>
-                <div class="attr-row">
-                    <div class="attr-card">
-                        <div class="attr-name">💰 现有金钱</div>
-                        <div class="attr-value">${this.res.money}</div>
+                    <div class="info-row">
+                        <span class="info-label">🌾 每月粮食盈亏</span>
+                        <span class="info-value" style="color: ${profitColor}">${grainProfit > 0 ? "+" : ""}${grainProfit}</span>
                     </div>
-                    <div class="attr-card">
-                        <div class="attr-name">🌾 现有粮食</div>
-                        <div class="attr-value">${this.res.grain}</div>
+                    <div class="info-row">
+                        <span class="info-label">💰 每月金钱收入</span>
+                        <span class="info-value">+${this.currentFort.yieldMoney}</span>
                     </div>
-                </div>
-                <div class="attr-row">
-                    <div class="attr-card">
-                        <div class="attr-name">👥 领民人口</div>
-                        <div class="attr-value">${this.res.people}</div>
+                    <div class="info-row">
+                        <span class="info-label">💰 现有金钱</span>
+                        <span class="info-value">${this.res.money}</span>
                     </div>
-                    <div class="attr-card">
-                        <div class="attr-name">⚔️ 可战士兵</div>
-                        <div class="attr-value">${this.res.soldier}</div>
+                    <div class="info-row">
+                        <span class="info-label">🌾 现有粮食</span>
+                        <span class="info-value">${this.res.grain}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">👥 领民人口</span>
+                        <span class="info-value">${this.res.people}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">⚔️ 可战士兵</span>
+                        <span class="info-value">${this.res.soldier}</span>
                     </div>
                 </div>
             `;
+
             container.innerHTML = html;
             return;
         }
