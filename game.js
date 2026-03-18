@@ -13,55 +13,63 @@ const game = {
     // 当前场景：玩家在 "zhuojun" 涿郡城内 / "world" 大地图
     currentScene: "zhuojun",
 
-    // 涿郡城内地点列表
+    // 涿郡城内地点列表，带解锁条件
     cityLocations: [
-        {
-            id: "gate",
-            name: "城门",
-            desc: "出城进入大地图",
-            action: () => game.enterWorldMap(),
-        },
-        {
-            id: "gov",
-            name: "郡府官署",
-            desc: "接取徭役任务，获得金钱",
-            action: () => game.showGovTask(),
-        },
-        {
-            id: "tavern",
-            name: "城门酒馆",
-            desc: "打听消息，结交豪杰",
-            action: () => game.enterTavern(),
-        },
-        {
-            id: "market",
-            name: "郡县市集",
-            desc: "买卖粮食物资",
-            action: () => game.showMarket(),
-        },
         {
             id: "farm",
             name: "城外荒地",
             desc: "亲自开垦，获得粮食",
+            unlockAt: 1, // 领地等级1就解锁（开局就有）
             action: () => game.actionClearLand(),
         },
         {
             id: "study",
             name: "自家书屋",
             desc: "闭门读书，增加智力",
+            unlockAt: 1,
             action: () => game.actionStudy(),
-        },
-        {
-            id: "train",
-            name: "校场练兵",
-            desc: "习武练兵，增加武力统率",
-            action: () => game.actionTrain(),
         },
         {
             id: "social",
             name: "乡野游走",
             desc: "结交豪杰，增加魅力",
+            unlockAt: 1,
             action: () => game.actionSocial(),
+        },
+        {
+            id: "tavern",
+            name: "城门酒馆",
+            desc: "打听消息，结交豪杰（领地2级解锁）",
+            unlockAt: 2,
+            action: () => game.enterTavern(),
+        },
+        {
+            id: "market",
+            name: "郡县市集",
+            desc: "买卖粮食物资（领地2级解锁）",
+            unlockAt: 2,
+            action: () => game.showMarket(),
+        },
+        {
+            id: "gov",
+            name: "郡府官署",
+            desc: "接取徭役任务，获得金钱（领地2级解锁）",
+            unlockAt: 2,
+            action: () => game.showGovTask(),
+        },
+        {
+            id: "train",
+            name: "校场练兵",
+            desc: "习武练兵，增加武力统率（领地2级解锁）",
+            unlockAt: 2,
+            action: () => game.actionTrain(),
+        },
+        {
+            id: "gate",
+            name: "城门",
+            desc: "出城进入大地图（领地2级解锁）",
+            unlockAt: 2,
+            action: () => game.enterWorldMap(),
         },
     ],
 
@@ -329,9 +337,9 @@ const game = {
         this.log = [
             `184年 1月：黄巾起义爆发，天下大乱。你是以${bg.name}的身份流落涿郡乡野，开始了你的乱世生涯...`,
             `184年 1月：【玩法引导】每个月有 5 点行动力，每次行动消耗 1 点`,
-            `184年 1月：【玩法引导】先去城外荒地开垦种粮，保证粮食供应，或者去郡府接任务赚钱`,
-            `184年 1月：【玩法引导】攒够资源可以升级领地，带来更多产出，解锁新功能`,
-            `184年 1月：【玩法引导】去酒馆有机会遇到三国名人，结交羁绊`,
+            `184年 1月：【玩法引导】开局只开放基础行动，升级领地会逐步解锁更多功能`,
+            `184年 1月：【玩法引导】先去「城外荒地」开垦种粮，保证粮食供应`,
+            `184年 1月：【玩法引导】攒够 500 钱 500 粮就能升级领地，解锁更多地点`,
             `184年 1月：初始目标：先活下去，慢慢发展，成为一方豪强`
         ];
 
@@ -512,10 +520,20 @@ const game = {
             this.notice("资源不足，无法升级！");
             return;
         }
+        const oldLv = this.fortLv;
         this.res.money -= def.costMoney;
         this.res.grain -= def.costGrain;
         this.fortLv = next;
         this.addLog(`领地升级 → ${def.name}`);
+
+        // 检查是否解锁了新地点
+        const newUnlocked = this.cityLocations.filter(loc => loc.unlockAt === next);
+        if (newUnlocked.length > 0) {
+            const names = newUnlocked.map(l => l.name).join('、');
+            this.addLog(`解锁新地点：${names}`);
+            setTimeout(() => this.notice(`🎉 解锁新地点：${names}`), 500);
+        }
+
         this.save();
         this.renderAll();
         this.notice(`领地升级成功！${def.name}`);
@@ -872,15 +890,26 @@ const game = {
             container.innerHTML = html;
             return;
         } else {
-            // 城内显示地点列表
+            // 城内显示地点列表，只显示已解锁的
             let html = `<div class="location-title">🏙️ ${this.getCurrentCityName()}</div><div class="location-grid">`;
             this.cityLocations.forEach(loc => {
-                html += `
-                    <div class="location-card" onclick="game.cityLocations[${this.cityLocations.findIndex(l => l.id === loc.id)}].action()">
-                        <div class="location-name">${loc.name}</div>
-                        <div class="location-desc">${loc.desc}</div>
-                    </div>
-                `;
+                if (loc.unlockAt > this.fortLv) {
+                    // 未解锁，显示为灰色不可点
+                    html += `
+                        <div class="location-card" style="opacity: 0.4; cursor: not-allowed;">
+                            <div class="location-name">${loc.name}</div>
+                            <div class="location-desc">${loc.desc}</div>
+                        </div>
+                    `;
+                } else {
+                    // 已解锁，可点击
+                    html += `
+                        <div class="location-card" onclick="game.cityLocations[${this.cityLocations.findIndex(l => l.id === loc.id)}].action()">
+                            <div class="location-name">${loc.name}</div>
+                            <div class="location-desc">${loc.desc}</div>
+                        </div>
+                    `;
+                }
             });
             html += '</div>';
             // 添加结束本月按钮
