@@ -180,6 +180,83 @@ const game = {
         huaTuo:   {name: "华佗", affinity: 0, unlocked: false},
     },
 
+    // === 任务系统配置 ===
+    // 你可以在这里自由添加任务，格式：
+    // {
+    //   id: "task_001",        // 唯一ID
+    //   name: "任务名称",
+    //   desc: "任务描述",
+    //   condition: () => true/false,  // 返回true表示完成
+    //   reward: {money: 100, grain: 100},  // 奖励
+    // }
+    quests: [
+        {
+            id: "t001",
+            name: "第一步：扎根",
+            desc: "将你的领地升级到 2 级，在涿郡站稳脚跟",
+            condition: () => game.fortLv >= 2,
+            reward: {money: 100, grain: 200, exp_force: 10},
+        },
+        {
+            id: "t002",
+            name: "强健体魄",
+            desc: "将武力提升到 50 以上",
+            condition: () => game.player.force.val >= 50,
+            reward: {money: 50, grain: 100, exp_force: 15},
+        },
+        {
+            id: "t003",
+            name: "饱读诗书",
+            desc: "将智力提升到 50 以上",
+            condition: () => game.player.intel.val >= 50,
+            reward: {money: 50, grain: 100, exp_intel: 15},
+        },
+        {
+            id: "t004",
+            name: "广结人脉",
+            desc: "将魅力提升到 50 以上",
+            condition: () => game.player.charisma.val >= 50,
+            reward: {money: 50, grain: 100, exp_charisma: 15},
+        },
+        {
+            id: "t005",
+            name: "将帅之才",
+            desc: "将统率提升到 50 以上",
+            condition: () => game.player.command.val >= 50,
+            reward: {money: 50, grain: 100, exp_command: 15},
+        },
+        {
+            id: "t006",
+            name: "一方豪强",
+            desc: "将你的领地升级到 3 级，建起坚固坞堡",
+            condition: () => game.fortLv >= 3,
+            reward: {money: 200, grain: 300, people: 20},
+        },
+        {
+            id: "t007",
+            name: "一郡之雄",
+            desc: "将你的领地升级到满级",
+            condition: () => game.fortLv >= 5,
+            reward: {money: 1000, grain: 2000, people: 100},
+        },
+        {
+            id: "t008",
+            name: "广聚流民",
+            desc: "领地人口达到 200 以上",
+            condition: () => game.res.people >= 200,
+            reward: {money: 150, grain: 250},
+        },
+        {
+            id: "t009",
+            name: "招兵买马",
+            desc: "拥有 50 以上士兵",
+            condition: () => game.res.soldier >= 50,
+            reward: {money: 200, grain: 100},
+        },
+    ],
+    // 已完成的任务ID列表
+    completedQuests: [],
+
     // 历史日志
     log: ["184年 1月：黄巾起义爆发，天下大乱，你流落乡野..."],
 
@@ -383,6 +460,7 @@ const game = {
             backpack: this.backpack,
             offline: this.offline,
             backgroundName: this.backgroundName, // 保存出身名称
+            completedQuests: this.completedQuests, // 保存已完成任务
         }));
     },
 
@@ -825,6 +903,10 @@ const game = {
 
     // === UI 渲染 ===
     renderAll: function() {
+        // 每次渲染都检查任务完成情况
+        if (this.quests) {
+            this.checkQuests();
+        }
         this.renderStatusBar();
         this.renderBottomTab();
         this.renderMapArea();
@@ -956,7 +1038,7 @@ const game = {
 
     renderBottomTab: function() {
         document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
-        const tabs = ["map", "character", "backpack", "log", "npc"];
+        const tabs = ["map", "character", "quest", "log", "npc"];
         tabs.forEach((tab, i) => {
             if (tab === this.currentBottomTab) {
                 document.querySelectorAll('.bottom-tab')[i].classList.add('active');
@@ -1052,6 +1134,11 @@ const game = {
             return;
         }
 
+        if (this.currentBottomTab === 'quest') {
+            this.renderQuests(container);
+            return;
+        }
+
         if (this.currentBottomTab === 'backpack') {
             if (this.backpack.length === 0) {
                 container.innerHTML = `<div class="empty-tip">背包还是空的...</div>`;
@@ -1124,5 +1211,93 @@ const game = {
 
     closeSettings: function() {
         document.getElementById('settingsModal').classList.remove('show');
+    },
+
+    // === 任务系统 ===
+    // 检查任务完成情况，返回新完成的任务ID列表
+    checkQuests: function() {
+        const newlyCompleted = [];
+        this.quests.forEach(q => {
+            if (!this.completedQuests.includes(q.id) && q.condition()) {
+                this.completedQuests.push(q.id);
+                newlyCompleted.push(q);
+            }
+        });
+        return newlyCompleted;
+    },
+
+    // 领取任务奖励
+    claimQuestReward: function(questId) {
+        const quest = this.quests.find(q => q.id === questId);
+        if (!quest || this.completedQuests.includes(questId)) return;
+
+        // 检查是否真的完成了
+        if (!quest.condition()) {
+            this.notice("任务还未完成！");
+            return;
+        }
+
+        // 发放奖励
+        this.applyReward(quest.reward);
+        this.completedQuests.push(questId);
+        this.addLog(`完成任务「${quest.name}」，领取奖励`);
+        this.save();
+        this.renderAll();
+        this.notice(`任务完成：${quest.name}，奖励已发放！`);
+    },
+
+    // 渲染任务面板
+    renderQuests: function(container) {
+        // 每次渲染都检查有没有新完成的
+        const newlyCompleted = this.checkQuests();
+        if (newlyCompleted.length > 0) {
+            newlyCompleted.forEach(q => {
+                this.notice(`🎉 任务完成：${q.name}，快去领取奖励吧！`);
+                this.addLog(`达成目标：${q.name}`);
+            });
+            this.save();
+        }
+
+        let html = `<h3>📋 任务列表</h3>`;
+
+        // 未完成在前，已完成在后
+        const incomplete = this.quests.filter(q => !this.completedQuests.includes(q.id));
+        const completed = this.quests.filter(q => this.completedQuests.includes(q.id));
+
+        if (incomplete.length === 0 && completed.length > 0) {
+            html += `<div class="empty-tip">🎉 所有任务都完成了！你已经是一方枭雄了！</div>`;
+            container.innerHTML = html;
+            return;
+        }
+
+        // 未完成任务
+        incomplete.forEach(q => {
+            html += `
+                <div class="quest-item incomplete">
+                    <div class="quest-header">
+                        <strong class="quest-name">${q.name}</strong>
+                        <button class="claim-btn" onclick="game.claimQuestReward('${q.id}')" ${q.condition() ? "" : "disabled"}>领取奖励</button>
+                    </div>
+                    <div class="quest-desc">${q.desc}</div>
+                </div>
+            `;
+        });
+
+        // 已完成任务
+        if (completed.length > 0) {
+            html += `<h4 style="margin: 15px 0 8px 0; color: #cd853f;">已完成 (${completed.length})</h4>`;
+            completed.forEach(q => {
+                html += `
+                    <div class="quest-item completed">
+                        <div class="quest-header">
+                            <strong class="quest-name">✅ ${q.name}</strong>
+                        </div>
+                        <div class="quest-desc">${q.desc}</div>
+                    </div>
+                `;
+            });
+        }
+
+        container.innerHTML = html;
     },
 };

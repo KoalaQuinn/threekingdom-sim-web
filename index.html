@@ -395,6 +395,36 @@
         .info-value {
             font-weight: bold;
         }
+        /* 任务列表 */
+        .quest-item {
+            background: rgba(210, 105, 30, 0.15);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .quest-item.completed {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .quest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .quest-name {
+            font-size: 16px;
+            color: #ffdead;
+        }
+        .quest-desc {
+            font-size: 14px;
+            color: #deb887;
+        }
+        .claim-btn {
+            font-size: 14px;
+            padding: 4px 12px;
+        }
         /* 底部信息栏 */
         .footer-bar {
             display: flex;
@@ -492,9 +522,9 @@
                 <span class="tab-icon">👤</span>
                 <span>角色</span>
             </div>
-            <div class="bottom-tab" onclick="game.switchBottomTab('backpack')">
-                <span class="tab-icon">🎒</span>
-                <span>背包</span>
+            <div class="bottom-tab" onclick="game.switchBottomTab('quest')">
+                <span class="tab-icon">📋</span>
+                <span>任务</span>
             </div>
             <div class="bottom-tab" onclick="game.switchBottomTab('log')">
                 <span class="tab-icon">📜</span>
@@ -507,7 +537,7 @@
         </div>
         <!-- 底部信息栏 -->
         <div class="footer-bar">
-            <span class="version-text">⚔️ 三国立志传：草莽英雄 v1.4.0 (2026-03-19)</span>
+            <span class="version-text">⚔️ 三国立志传：草莽英雄 v1.5.0 (2026-03-19)</span>
             <button class="reset-btn" onclick="game.resetGame()">重置游戏</button>
         </div>
     </div>
