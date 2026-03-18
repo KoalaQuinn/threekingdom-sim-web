@@ -332,6 +332,7 @@ const game = {
         this.res.money = bg.money;
         this.res.grain = bg.grain;
         this.res.people = bg.people;
+        this.backgroundName = bg.name; // 保存出身名称
 
         // 初始日志 + 新手引导
         this.log = [
@@ -368,14 +369,6 @@ const game = {
         }));
     },
 
-    load: function() {
-        const save = localStorage.getItem("sangoku-caocao");
-        if (save) {
-            const data = JSON.parse(save);
-            Object.assign(this, data);
-        }
-    },
-
     // === 存档读档 ===
     save: function() {
         localStorage.setItem("sangoku-caocao", JSON.stringify({
@@ -389,6 +382,7 @@ const game = {
             log: this.log,
             backpack: this.backpack,
             offline: this.offline,
+            backgroundName: this.backgroundName, // 保存出身名称
         }));
     },
 
@@ -972,9 +966,19 @@ const game = {
 
     renderNonMapTab: function(container) {
         if (this.currentBottomTab === 'character') {
+            // 计算游戏时长（总月数）
+            const totalMonths = (this.date.year - 184) * 12 + this.date.month;
+            // 获取出身名称（如果有记录）
+            const bgName = this.backgroundName || "流民";
+
             // 角色详细属性
             let html = `
-                <h3>👤 角色信息</h3>
+                <div class="character-header">
+                    <h2>👤 ${bgName}</h2>
+                    <p class="character-sub">生于 184年 1月，乱世中已闯荡 <strong>${totalMonths}</strong> 个月</p>
+                </div>
+
+                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #cd853f;">基础属性</h3>
                 <div class="attr-row">
                     <div class="attr-card">
                         <div class="attr-name">⚔️ 武力</div>
@@ -999,11 +1003,38 @@ const game = {
                         <div class="attr-exp">Lv.${this.player.command.lv} 经验: ${this.player.command.exp}/${this.player.command.lv * 10}</div>
                     </div>
                 </div>
-                <div class="attr-row" style="margin-top: 15px;">
+
+                <h3 style="margin-top: 15px; margin-bottom: 10px; color: #cd853f;">领地信息</h3>
+                <div class="attr-row">
                     <div class="attr-card">
-                        <div class="attr-name">🏰 领地</div>
+                        <div class="attr-name">🏰 当前领地</div>
                         <div class="attr-value">${this.currentFort.name}</div>
-                        <div class="attr-exp">Lv.${this.currentFort.lv}</div>
+                        <div class="attr-exp">Lv.${this.fortLv}</div>
+                    </div>
+                    <div class="attr-card">
+                        <div class="attr-name">🌾 每月盈亏</div>
+                        <div class="attr-value">${this.currentFort.yieldGrain - (this.currentFort.upkeepGrain + this.res.soldier)} 粮食</div>
+                        <div class="attr-exp">+${this.currentFort.yieldMoney} 金钱</div>
+                    </div>
+                </div>
+                <div class="attr-row">
+                    <div class="attr-card">
+                        <div class="attr-name">💰 现有金钱</div>
+                        <div class="attr-value">${this.res.money}</div>
+                    </div>
+                    <div class="attr-card">
+                        <div class="attr-name">🌾 现有粮食</div>
+                        <div class="attr-value">${this.res.grain}</div>
+                    </div>
+                </div>
+                <div class="attr-row">
+                    <div class="attr-card">
+                        <div class="attr-name">👥 领民人口</div>
+                        <div class="attr-value">${this.res.people}</div>
+                    </div>
+                    <div class="attr-card">
+                        <div class="attr-name">⚔️ 可战士兵</div>
+                        <div class="attr-value">${this.res.soldier}</div>
                     </div>
                 </div>
             `;
